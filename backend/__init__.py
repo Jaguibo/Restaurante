@@ -11,6 +11,7 @@ from backend.routes.cocina import cocina
 from backend.routes.cuentas import cuentas
 from backend.routes.admin import admin
 from backend.routes.promociones import promociones_bp
+from backend.routes.productos import productos_bp
 
 from backend.db import get_db_connection, setup_database
 
@@ -74,6 +75,8 @@ def create_app():
         app.register_blueprint(cuentas)
         app.register_blueprint(admin)
         app.register_blueprint(promociones_bp)
+        app.register_blueprint(productos_bp)
+
 
         logger.info("✅ Aplicación Flask creada con éxito")
         return app

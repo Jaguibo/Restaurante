@@ -2,11 +2,11 @@ from flask import Blueprint, request, jsonify, session
 from backend.db import get_db_connection
 import logging
 import traceback
+import bcrypt
 
 admin = Blueprint("admin", __name__, url_prefix="/api")
 
-# 📂 Configurar logging
-logging.basicConfig(filename='logs/app.log', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 🔒 Middleware: Solo admins
 def es_admin():
@@ -43,7 +43,7 @@ def agregar_producto():
             conn.commit()
         return jsonify({"ok": True, "mensaje": "Producto agregado"})
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al agregar producto: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al agregar producto: {e}")
         return jsonify({"ok": False, "error": "Error al agregar producto"}), 500
 
 @admin.route("/productos/<int:id>", methods=["PUT"])
@@ -63,7 +63,7 @@ def editar_producto(id):
             conn.commit()
         return jsonify({"ok": True, "mensaje": "Producto actualizado"})
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al editar producto: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al editar producto: {e}")
         return jsonify({"ok": False, "error": "Error al editar producto"}), 500
 
 @admin.route("/productos/<int:id>", methods=["DELETE"])
@@ -76,7 +76,7 @@ def eliminar_producto(id):
             conn.commit()
         return jsonify({"ok": True, "mensaje": "Producto eliminado"})
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al eliminar producto: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al eliminar producto: {e}")
         return jsonify({"ok": False, "error": "Error al eliminar producto"}), 500
 
 # ================================
@@ -102,15 +102,16 @@ def agregar_usuario():
     if not all([usuario, password, rol]):
         return jsonify({"ok": False, "error": "Faltan datos"}), 400
     try:
+        password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         with get_db_connection() as conn:
             conn.execute(
                 "INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, ?)",
-                (usuario, password, rol)
+                (usuario, password_hash, rol)
             )
             conn.commit()
         return jsonify({"ok": True, "mensaje": "Usuario creado"})
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al crear usuario: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al crear usuario: {e}")
         return jsonify({"ok": False, "error": "Error al crear usuario"}), 500
 
 @admin.route("/usuarios/<usuario>", methods=["DELETE"])
@@ -123,7 +124,7 @@ def eliminar_usuario(usuario):
             conn.commit()
         return jsonify({"ok": True, "mensaje": "Usuario eliminado"})
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al eliminar usuario: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al eliminar usuario: {e}")
         return jsonify({"ok": False, "error": "Error al eliminar usuario"}), 500
 
 # ================================
@@ -145,7 +146,7 @@ def ver_metricas():
             """).fetchall()
             return jsonify([dict(m) for m in metricas])
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al obtener métricas: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al obtener métricas: {e}")
         return jsonify({"error": "Error interno"}), 500
 
 # ================================
@@ -166,5 +167,5 @@ def ver_notificaciones():
             """).fetchall()
             return jsonify([dict(n) for n in notificaciones])
     except Exception as e:
-        logging.exception(f"[ADMIN] ❌ Error al obtener notificaciones: {e}")
+        logger.exception(f"[ADMIN] ❌ Error al obtener notificaciones: {e}")
         return jsonify({"error": "Error interno"}), 500

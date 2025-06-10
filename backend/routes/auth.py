@@ -1,13 +1,13 @@
 from flask import Blueprint, request, session, jsonify
 from backend.db import get_db_connection
 import logging
+import bcrypt
 
 auth = Blueprint("auth", __name__, url_prefix="/api")
 
-# 📝 Logging
-logging.basicConfig(filename='logs/app.log', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# 🔐 Login con base de datos
+# 🔐 Login de usuario
 @auth.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -16,7 +16,7 @@ def login():
     client_ip = request.remote_addr
 
     if not username or not password:
-        logging.warning(f"[LOGIN] ❌ Campos vacíos | IP: {client_ip}")
+        logger.warning(f"[LOGIN] ❌ Campos vacíos | IP: {client_ip}")
         return jsonify({"error": "Todos los campos son obligatorios"}), 400
 
     try:
@@ -28,25 +28,26 @@ def login():
             usuario = cursor.fetchone()
 
             if not usuario:
-                logging.warning(f"[LOGIN] ❌ Usuario no encontrado: {username} | IP: {client_ip}")
+                logger.warning(f"[LOGIN] ❌ Usuario no encontrado: {username} | IP: {client_ip}")
                 return jsonify({"error": "Credenciales inválidas"}), 401
 
+            password_hash = usuario["password"]
             if usuario["password"] != password:
-                logging.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
+                logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
                 return jsonify({"error": "Credenciales inválidas"}), 401
 
-            # ✅ Autenticado
+            # ✅ Autenticado correctamente
             session["usuario"] = usuario["usuario"]
             session["rol"] = usuario["rol"]
 
-            logging.info(f"[LOGIN] ✅ Usuario autenticado: {username} | Rol: {usuario['rol']} | IP: {client_ip}")
+            logger.info(f"[LOGIN] ✅ Usuario autenticado: {username} | Rol: {usuario['rol']} | IP: {client_ip}")
             return jsonify({"ok": True, "rol": usuario["rol"]}), 200
 
     except Exception as e:
-        logging.exception(f"[LOGIN] ❌ Error al autenticar usuario: {e}")
+        logger.exception(f"[LOGIN] ❌ Error al autenticar usuario: {e}")
         return jsonify({"error": "Error interno"}), 500
 
-# 🔍 Verificar sesión
+# 🔍 Verificación de sesión activa
 @auth.route("/verificar", methods=["GET"])
 def verificar_sesion():
     if "usuario" in session and "rol" in session:
@@ -57,10 +58,10 @@ def verificar_sesion():
         }), 200
     return jsonify({"ok": False}), 403
 
-# 🚪 Logout
+# 🚪 Cierre de sesión
 @auth.route("/logout", methods=["POST"])
 def logout():
     usuario = session.get("usuario", "desconocido")
     session.clear()
-    logging.info(f"[LOGOUT] 🔒 Sesión cerrada por: {usuario}")
+    logger.info(f"[LOGOUT] 🔒 Sesión cerrada por: {usuario}")
     return jsonify({"ok": True, "mensaje": "Sesión cerrada"}), 200

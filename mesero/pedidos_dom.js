@@ -1,41 +1,66 @@
-// pedidos_dom.js
-
 const SONIDO = new Audio("assets/notificacion.mp3");
 let contador = 0;
 let pedidosAnteriores = [];
 
-export function mostrarError(msg) {
-  const errorDisplay = document.getElementById("error");
-  errorDisplay.textContent = msg;
-  errorDisplay.classList.remove("hidden");
-  errorDisplay.setAttribute("aria-live", "assertive");
+// 🟥 Mostrar error
+export function mostrarError(texto) {
+  const div = document.getElementById("error");
+  if (!div) return;
+  div.textContent = `❌ ${texto}`;
+  div.className = "bg-red-100 text-red-700 border border-red-300 p-2 rounded mb-4 text-sm text-center";
+  div.classList.remove("hidden");
+  setTimeout(() => div.classList.add("hidden"), 4000);
 }
 
+// 🟩 Mostrar éxito
+export function mostrarExito(texto) {
+  const div = document.getElementById("mensaje");
+  if (!div) return;
+  div.textContent = `✅ ${texto}`;
+  div.className = "bg-green-100 text-green-700 border border-green-300 p-2 rounded mb-4 text-sm text-center";
+  div.classList.remove("hidden");
+  setTimeout(() => div.classList.add("hidden"), 3000);
+}
+
+// 🟦 Mostrar info
+export function mostrarMensaje(texto) {
+  const div = document.getElementById("mensaje");
+  if (!div) return;
+  div.textContent = `🔄 ${texto}`;
+  div.className = "bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded mb-4 text-sm text-center";
+  div.classList.remove("hidden");
+  setTimeout(() => div.classList.add("hidden"), 3000);
+}
+
+// 🪑 Mesas
 export function renderizarMesas(mesas) {
   const mesaSelect = document.getElementById("mesa");
   mesaSelect.innerHTML = '<option value="">Selecciona una mesa</option>';
   mesas.forEach(m => {
     const opt = document.createElement("option");
-    opt.value = m.numero;
-    opt.textContent = `Mesa ${m.numero}`;
+    opt.value = m.numero || m;
+    opt.textContent = `Mesa ${m.numero || m}`;
     mesaSelect.appendChild(opt);
   });
 }
 
+// 🧼 Reset
 export function resetFormulario() {
   const pedidoForm = document.getElementById("pedidoForm");
-  pedidoForm.innerHTML = "";
+  pedidoForm.innerHTML = "<p class='text-gray-500 text-center py-4'>Haz clic en los productos del menú para agregarlos aquí.</p>";
   contador = 0;
   const mesaValida = document.getElementById("mesa").value;
-  document.getElementById("agregarPedido").disabled = !mesaValida;
   document.getElementById("enviarCocina").disabled = !mesaValida;
 }
 
+// ➕ Agregar línea manual
 export function agregarLineaPedido(tipoCuenta) {
   const pedidoForm = document.getElementById("pedidoForm");
   contador++;
+
   const div = document.createElement("div");
   div.className = "border p-3 rounded bg-white espacioPedido";
+
   div.innerHTML = `
     ${tipoCuenta === 'separada'
       ? '<input type="text" placeholder="Nombre del cliente" class="nombre w-full p-2 mb-2 border rounded" required />'
@@ -43,9 +68,34 @@ export function agregarLineaPedido(tipoCuenta) {
     <input type="text" placeholder="Producto" class="producto w-full p-2 mb-2 border rounded" required />
     <input type="number" placeholder="Cantidad" class="cantidad w-full p-2 border rounded" required min="1" value="1" />
   `;
+
   pedidoForm.appendChild(div);
+  document.getElementById("enviarCocina").disabled = false;
 }
 
+// ➕ Agregar línea desde botón
+function agregarLineaConProducto(nombreProducto) {
+  const tipoCuenta = document.getElementById("tipoCuenta").value;
+  const pedidoForm = document.getElementById("pedidoForm");
+  contador++;
+
+  const div = document.createElement("div");
+  div.className = "border p-3 rounded bg-white espacioPedido";
+
+  div.innerHTML = `
+    ${tipoCuenta === 'separada'
+      ? '<input type="text" placeholder="Nombre del cliente" class="nombre w-full p-2 mb-2 border rounded" required />'
+      : ''}
+    <div class="mb-2 font-medium">${nombreProducto}</div>
+    <input type="hidden" class="producto" value="${nombreProducto}" />
+    <input type="number" placeholder="Cantidad" class="cantidad w-full p-2 border rounded" required min="1" value="1" />
+  `;
+
+  pedidoForm.appendChild(div);
+  document.getElementById("enviarCocina").disabled = false;
+}
+
+// 📦 Obtener items
 export function obtenerItemsDelFormulario(tipoCuenta) {
   const items = [];
   let incompletos = false;
@@ -73,13 +123,13 @@ export function obtenerItemsDelFormulario(tipoCuenta) {
   return { items, incompletos };
 }
 
+// 📬 Pedidos listos
 export function renderizarPedidosListos(pedidos, onRecibir) {
   const listaListos = document.getElementById("listaListos");
   listaListos.innerHTML = "";
 
   const nuevos = pedidos.filter(p => !pedidosAnteriores.some(prev => prev.id === p.id));
   if (nuevos.length > 0) SONIDO.play().catch(() => {});
-
   pedidosAnteriores = pedidos;
 
   if (pedidos.length === 0) {
@@ -107,4 +157,42 @@ export function renderizarPedidosListos(pedidos, onRecibir) {
     div.querySelector("button").addEventListener("click", () => onRecibir(p.id));
     listaListos.appendChild(div);
   });
+}
+
+// 🍽️ Menú visual por categorías
+export async function cargarMenuVisual() {
+  try {
+    const res = await fetch("http://localhost:5000/api/productos-agrupados", { credentials: "include" });
+
+    const data = await res.json();
+
+    const contenedor = document.getElementById("menuVisual");
+    if (!contenedor) return;
+    contenedor.innerHTML = "";
+
+    Object.entries(data).forEach(([categoria, productos]) => {
+      const seccion = document.createElement("section");
+
+      const titulo = document.createElement("h3");
+      titulo.textContent = categoria;
+      titulo.className = "text-lg font-bold text-gray-700 mb-2";
+      seccion.appendChild(titulo);
+
+      const grid = document.createElement("div");
+      grid.className = "grid grid-cols-2 md:grid-cols-3 gap-3";
+
+      productos.forEach(p => {
+        const btn = document.createElement("button");
+        btn.textContent = `${p.nombre} ($${parseFloat(p.precio).toFixed(2)})`;
+        btn.className = "bg-white border border-gray-300 hover:bg-green-100 p-3 rounded shadow text-sm";
+        btn.onclick = () => agregarLineaConProducto(p.nombre);
+        grid.appendChild(btn);
+      });
+
+      seccion.appendChild(grid);
+      contenedor.appendChild(seccion);
+    });
+  } catch (err) {
+    console.error("❌ Error al cargar menú visual:", err);
+  }
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Sistema de toma de pedidos para meseros">
   <title>Toma de Pedidos - Mesero</title>
-  <script defer src="../shared/verificarSesion.js" data-rol="mesero"></script>
+  <script src="/shared/verificarSesion.js" data-rol="mesero"></script>
   <script type="module" defer src="pedidos_eventos.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="icon" href="/ruta/a/tu/favicon.ico" />
@@ -35,7 +35,12 @@
         </select>
       </div>
 
-      <div class="mb-4">
+      <section class="mt-8">
+        <h2 class="text-xl font-bold mb-4">📋 Menú por Categorías</h2>
+        <div id="menuVisual" class="space-y-6"></div>
+      </section>
+
+      <div class="mb-4 mt-6">
         <label for="tipoCuenta" class="font-medium block mb-1">Tipo de cuenta:</label>
         <select id="tipoCuenta" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500">
           <option value="junta">Junta (todos pagan juntos)</option>
@@ -46,16 +51,13 @@
       <section aria-labelledby="pedido-heading" class="mb-6">
         <h2 id="pedido-heading" class="sr-only">Formulario de pedidos</h2>
         <div id="pedidoForm" class="space-y-4">
-          <p class="text-gray-500 text-center py-4">Seleccione una mesa para comenzar</p>
+          <p class="text-gray-500 text-center py-4">
+            Haz clic en los productos del menú para agregarlos aquí.
+          </p>
         </div>
       </section>
 
       <div class="flex flex-wrap gap-2 justify-end">
-        <button id="agregarPedido" type="button"
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-                disabled>
-          ➕ Agregar Pedido
-        </button>
         <button id="enviarCocina" type="button"
                 class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-green-300"
                 disabled>
@@ -79,7 +81,7 @@
         <p class="text-gray-600 text-center py-4">Cargando pedidos listos...</p>
       </div>
     </section>
-  </div>
+
 
   <!-- 📎 Footer -->
   <footer class="mt-8 text-center text-gray-500 text-sm">

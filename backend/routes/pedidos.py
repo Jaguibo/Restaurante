@@ -3,14 +3,17 @@ from backend.db import get_db_connection
 import logging
 import datetime
 import os
+import sqlite3
 
-# 📂 Logging (solo una vez y al inicio)
+
+# 📁 Setup de logs
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(filename="logs/app.log", level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 pedidos = Blueprint('pedidos', __name__, url_prefix="/api")
 
-# 🚀 Registrar nuevo pedido
+# 📌 Registro de un nuevo pedido
 @pedidos.route("/pedidos", methods=["POST"])
 def registrar_pedido():
     if session.get("rol") != "mesero":
@@ -19,52 +22,69 @@ def registrar_pedido():
     data = request.get_json()
     mesa = data.get("mesa")
     cuenta = data.get("cuenta")
-    items = data.get("items")
+    items = data.get("items", [])
     mesero = data.get("mesero")
     fecha = data.get("fecha")
 
-    if not isinstance(items, list) or not all([mesa, cuenta, items, mesero, fecha]):
-        logging.warning(f"[PEDIDO] ❌ Datos incompletos: {data}")
+    if not all([mesa, cuenta, items, mesero, fecha]):
+        logger.warning("[PEDIDO] ❌ Datos incompletos")
         return jsonify({"ok": False, "error": "Faltan datos"}), 400
 
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO pedidos (mesa, cuenta, mesero, fecha, estado) VALUES (?, ?, ?, ?, 'pendiente')",
-                (mesa, cuenta, mesero, fecha)
-            )
+            cursor.execute("""
+                INSERT INTO pedidos (mesa, cuenta, mesero, fecha, estado)
+                VALUES (?, ?, ?, ?, 'pendiente')
+            """, (mesa, cuenta, mesero, fecha))
             pedido_id = cursor.lastrowid
 
             for item in items:
                 nombre = item.get("nombre")
                 producto = item.get("producto")
-                cantidad = item.get("cantidad")
+                cantidad = item.get("cantidad", 1)
                 if not producto or not isinstance(cantidad, int):
                     continue
 
-                precio = cursor.execute(
+                precio_row = cursor.execute(
                     "SELECT precio FROM productos WHERE nombre = ?",
                     (producto,)
                 ).fetchone()
-                precio_valor = precio["precio"] if precio else 0
+                precio = precio_row["precio"] if precio_row else 0
 
-                cursor.execute(
-                    "INSERT INTO items (pedido_id, nombre, producto, cantidad, precio) VALUES (?, ?, ?, ?, ?)",
-                    (pedido_id, nombre, producto, cantidad, precio_valor)
-                )
+                cursor.execute("""
+                    INSERT INTO items (pedido_id, nombre, producto, cantidad, precio)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (pedido_id, nombre, producto, cantidad, precio))
 
             cursor.execute("INSERT INTO pedidos_listos (pedido_id, hora_listo) VALUES (?, NULL)", (pedido_id,))
             conn.commit()
 
-            logging.info(f"[PEDIDO] ✅ Pedido #{pedido_id} registrado")
+            logger.info(f"[PEDIDO] ✅ Pedido #{pedido_id} registrado")
             return jsonify({"ok": True, "id_pedido": pedido_id})
 
     except Exception as e:
-        logging.exception(f"[PEDIDO] ❌ Error al registrar: {e}")
+        logger.exception("[PEDIDO] ❌ Error al registrar pedido")
+        return jsonify({"ok": False, "error": "Error interno"}), 500
+    
+# ✅ Listar mesas disponibles
+@pedidos.route("/mesas", methods=["GET"])
+def obtener_mesas():
+    if session.get("rol") != "mesero":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
+
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            mesas = cursor.execute("SELECT nombre FROM mesas").fetchall()
+            lista = [row["nombre"] for row in mesas]
+            return jsonify(lista)
+    except Exception:
+        logger.exception("[PEDIDO] ❌ Error al obtener mesas")
         return jsonify({"ok": False, "error": "Error interno"}), 500
 
-# 📋 Pedido por mesa
+
+# 🧾 Listar pedido activo por mesa
 @pedidos.route("/pedido/<mesa>", methods=["GET"])
 def obtener_pedido_por_mesa(mesa):
     if session.get("rol") != "mesero":
@@ -94,58 +114,90 @@ def obtener_pedido_por_mesa(mesa):
                 "items": [dict(row) for row in items]
             })
 
-    except Exception as e:
-        logging.exception(f"[CUENTA] ❌ Error obteniendo pedido mesa {mesa}: {e}")
+    except Exception:
+        logger.exception(f"[PEDIDO] ❌ Error al obtener pedido de mesa {mesa}")
         return jsonify({"ok": False, "error": "Error interno"}), 500
 
-# ✅ Cerrar cuenta
-@pedidos.route("/cerrar-cuenta", methods=["POST"])
-def cerrar_cuenta():
-    if session.get("rol") != "mesero":
-        return jsonify({"ok": False, "error": "No autorizado"}), 403
-
-    data = request.get_json()
-    pedido_id = data.get("pedido_id")
-    mesa = data.get("mesa")
-    mesero = data.get("mesero")
-    total = data.get("total")
-    detalle = data.get("detalle")
-
-    if not all([pedido_id, mesa, mesero, isinstance(detalle, list)]) or total is None:
-        logging.warning(f"[CUENTA] ⚠️ Datos incompletos: {data}")
-        return jsonify({"ok": False, "error": "Faltan datos"}), 400
-
+# ✅ Marcar pedido como listo y guardar métrica
+@pedidos.route("/pedido-listo/<int:pedido_id>", methods=["POST"])
+def marcar_como_listo(pedido_id):
     try:
-        fecha_hora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ahora = datetime.datetime.now()
+        ahora_str = ahora.strftime("%Y-%m-%d %H:%M:%S")
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("UPDATE pedidos SET estado = 'cerrado' WHERE id = ?", (pedido_id,))
+            # Obtener hora de creación
+            pedido = cursor.execute("SELECT fecha FROM pedidos WHERE id = ?", (pedido_id,)).fetchone()
+            if not pedido:
+                return jsonify({"error": "Pedido no encontrado"}), 404
+
+            inicio = datetime.datetime.strptime(pedido["fecha"], "%Y-%m-%d %H:%M:%S")
+            duracion = int((ahora - inicio).total_seconds())
+
             cursor.execute("""
-                INSERT INTO cierre_cuentas (pedido_id, mesa, mesero, total, fecha_hora)
-                VALUES (?, ?, ?, ?, ?)
-            """, (pedido_id, mesa, mesero, total, fecha_hora))
+                UPDATE pedidos_listos SET hora_listo = ? WHERE pedido_id = ?
+            """, (ahora_str, pedido_id))
+            cursor.execute("UPDATE pedidos SET estado = 'listo' WHERE id = ?", (pedido_id,))
 
-            for d in detalle:
-                cliente = d.get("cliente", "General")[:50]
-                subtotal = float(d.get("subtotal") or 0)
-                propina = float(d.get("propina") or 0)
-
+            # 🧠 Insertar métrica si tabla existe
+            try:
                 cursor.execute("""
-                    INSERT INTO detalle_cierre (pedido_id, cliente, subtotal, propina)
-                    VALUES (?, ?, ?, ?)
-                """, (pedido_id, cliente, subtotal, propina))
+                    INSERT INTO pedido_metricas (pedido_id, tiempo_preparacion)
+                    VALUES (?, ?)
+                """, (pedido_id, duracion))
+            except sqlite3.OperationalError:
+                pass  # Tabla no existe, omitir
 
             conn.commit()
-            logging.info(f"[CIERRE] ✅ Cuenta cerrada - Mesa: {mesa} | Pedido: {pedido_id}")
+            logger.info(f"[COCINA] ✅ Pedido {pedido_id} marcado como listo en {duracion}s")
             return jsonify({"ok": True})
 
-    except Exception as e:
-        logging.exception(f"[CIERRE] ❌ Error al cerrar cuenta mesa {mesa}: {e}")
+    except Exception:
+        logger.exception("[COCINA] ❌ Error al marcar como listo")
         return jsonify({"ok": False, "error": "Error interno"}), 500
 
-# 📦 Listos
+# ✅ Marcar recibido por mesero
+@pedidos.route("/pedido-recibido/<int:pedido_id>", methods=["POST"])
+def marcar_pedido_recibido(pedido_id):
+    try:
+        ahora = datetime.datetime.now()
+        ahora_str = ahora.strftime("%Y-%m-%d %H:%M:%S")
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR IGNORE INTO pedidos_recibidos (pedido_id, hora_recibido)
+                VALUES (?, ?)
+            """, (pedido_id, ahora_str))
+
+            cursor.execute("UPDATE pedidos SET estado = 'recibido' WHERE id = ?", (pedido_id,))
+
+            # Insertar métrica de entrega si aplica
+            try:
+                listo = cursor.execute("""
+                    SELECT hora_listo FROM pedidos_listos WHERE pedido_id = ?
+                """, (pedido_id,)).fetchone()
+                if listo and listo["hora_listo"]:
+                    inicio = datetime.datetime.strptime(listo["hora_listo"], "%Y-%m-%d %H:%M:%S")
+                    entrega = int((ahora - inicio).total_seconds())
+                    cursor.execute("""
+                        UPDATE pedido_metricas SET tiempo_entrega = ?
+                        WHERE pedido_id = ?
+                    """, (entrega, pedido_id))
+            except sqlite3.OperationalError:
+                pass
+
+            conn.commit()
+            logger.info(f"[MESERO] ✅ Pedido {pedido_id} marcado como recibido")
+            return jsonify({"ok": True})
+
+    except Exception:
+        logger.exception("[MESERO] ❌ Error al marcar como recibido")
+        return jsonify({"ok": False, "error": "Error interno"}), 500
+
+# 📦 Pedidos listos para entregar
 @pedidos.route("/pedidos-listos", methods=["GET"])
 def obtener_pedidos_listos():
     try:
@@ -157,28 +209,26 @@ def obtener_pedidos_listos():
                 JOIN items i ON p.id = i.pedido_id
                 JOIN pedidos_listos pl ON p.id = pl.pedido_id
                 WHERE p.estado = 'pendiente' AND pl.hora_listo IS NOT NULL
-                AND p.id NOT IN (SELECT pedido_id FROM pedidos_recibidos)
+                  AND p.id NOT IN (SELECT pedido_id FROM pedidos_recibidos)
                 ORDER BY p.id
             """)
-            rows = cursor.fetchall()
-            pedidos_dict = {}
-            for row in rows:
+            pedidos = {}
+            for row in cursor.fetchall():
                 pid = row["id"]
-                if pid not in pedidos_dict:
-                    pedidos_dict[pid] = {
-                        "id": pid, "mesa": row["mesa"], "cuenta": row["cuenta"], "items": []
-                    }
-                pedidos_dict[pid]["items"].append({
+                pedidos.setdefault(pid, {
+                    "id": pid, "mesa": row["mesa"], "cuenta": row["cuenta"], "items": []
+                })["items"].append({
                     "nombre": row["nombre"], "producto": row["producto"],
                     "cantidad": row["cantidad"], "precio": row["precio"]
                 })
-            return jsonify(list(pedidos_dict.values()))
 
-    except Exception as e:
-        logging.exception("[PEDIDO] ❌ Error al cargar listos: %s", e)
-        return jsonify({"ok": False, "error": "Error al cargar pedidos listos"}), 500
+            return jsonify(list(pedidos.values()))
 
-# 🍳 Cocina - pendientes
+    except Exception:
+        logger.exception("[PEDIDO] ❌ Error al obtener pedidos listos")
+        return jsonify({"ok": False, "error": "Error interno"}), 500
+
+# ⏳ Pendientes en cocina
 @pedidos.route("/pedidos-pendientes", methods=["GET"])
 def obtener_pedidos_pendientes():
     try:
@@ -192,51 +242,18 @@ def obtener_pedidos_pendientes():
                 WHERE p.estado = 'pendiente' AND pl.hora_listo IS NULL
                 ORDER BY p.fecha ASC, p.id ASC
             """)
-            rows = cursor.fetchall()
-            pedidos_dict = {}
-            for row in rows:
+            pedidos = {}
+            for row in cursor.fetchall():
                 pid = row["id"]
-                if pid not in pedidos_dict:
-                    pedidos_dict[pid] = {"id": pid, "mesa": row["mesa"], "fecha_hora": row["fecha"], "items": []}
-                pedidos_dict[pid]["items"].append({
+                pedidos.setdefault(pid, {
+                    "id": pid, "mesa": row["mesa"], "fecha_hora": row["fecha"], "items": []
+                })["items"].append({
                     "nombre": row["nombre"], "producto": row["producto"],
                     "cantidad": row["cantidad"], "precio": row["precio"]
                 })
-            return jsonify(list(pedidos_dict.values()))
 
-    except Exception as e:
-        logging.exception("[COCINA] ❌ Error al cargar pendientes: %s", e)
-        return jsonify({"ok": False, "error": "Error al cargar pedidos pendientes"}), 500
+            return jsonify(list(pedidos.values()))
 
-# ✅ Cocina marca como listo
-@pedidos.route("/pedido-listo/<int:pedido_id>", methods=["POST"])
-def marcar_como_listo(pedido_id):
-    try:
-        ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("UPDATE pedidos_listos SET hora_listo = ? WHERE pedido_id = ?", (ahora, pedido_id))
-            conn.commit()
-        logging.info(f"[COCINA] ✅ Pedido {pedido_id} listo")
-        return jsonify({"ok": True})
-
-    except Exception as e:
-        logging.exception("[COCINA] ❌ Error al marcar listo: %s", e)
-        return jsonify({"ok": False, "error": "Error al marcar como listo"}), 500
-
-# ✅ Marcar recibido (mesero)
-@pedidos.route("/pedido-recibido/<int:pedido_id>", methods=["POST"])
-def marcar_pedido_recibido(pedido_id):
-    try:
-        ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("INSERT OR IGNORE INTO pedidos_recibidos (pedido_id, hora_recibido) VALUES (?, ?)", (pedido_id, ahora))
-            cursor.execute("UPDATE pedidos SET estado = 'recibido' WHERE id = ?", (pedido_id,))
-            conn.commit()
-        logging.info(f"[MESERO] ✅ Pedido {pedido_id} recibido")
-        return jsonify({"ok": True})
-
-    except Exception as e:
-        logging.exception("[MESERO] ❌ Error al marcar recibido: %s", e)
-        return jsonify({"ok": False, "error": "Error al marcar como recibido"}), 500
+    except Exception:
+        logger.exception("[COCINA] ❌ Error al obtener pendientes")
+        return jsonify({"ok": False, "error": "Error interno"}), 500

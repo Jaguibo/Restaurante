@@ -6,8 +6,8 @@ import logging
 # 📌 Blueprint con prefijo /api/cocina
 cocina = Blueprint('cocina', __name__, url_prefix="/api/cocina")
 
-# 🧾 Logging
-logging.basicConfig(filename='logs/app.log', level=logging.INFO)
+# 🧾 Logger local
+logger = logging.getLogger(__name__)
 
 # 🔍 Obtener pedidos pendientes (no listos aún)
 @cocina.route("/pedidos-pendientes", methods=["GET"])
@@ -27,21 +27,16 @@ def pedidos_pendientes():
 
             resultado = []
             for p in pedidos:
-                pid = p["id"]
-                cursor.execute("""
-                    SELECT producto, cantidad FROM items WHERE pedido_id = ?
-                """, (pid,))
+                cursor.execute("SELECT producto, cantidad FROM items WHERE pedido_id = ?", (p["id"],))
                 items = [dict(i) for i in cursor.fetchall()]
-
                 resultado.append({
-                    "id": pid,
+                    "id": p["id"],
                     "mesa": p["mesa"],
                     "fecha": p["fecha"],
                     "mesero": p["mesero"],
                     "items": items
                 })
 
-            # 🔔 Si hay nuevos pedidos pendientes, se puede emitir sonido del lado del cliente (polling)
             return jsonify({
                 "ok": True,
                 "nuevos": len(resultado),
@@ -49,7 +44,7 @@ def pedidos_pendientes():
             })
 
     except Exception as e:
-        logging.exception("[COCINA] ❌ Error obteniendo pedidos pendientes")
+        logger.exception("[COCINA] ❌ Error obteniendo pedidos pendientes")
         return jsonify({"error": "Error interno"}), 500
 
 # ✅ Marcar pedido como "listo" y registrar tiempo de preparación
@@ -60,7 +55,7 @@ def marcar_pedido_listo(pedido_id):
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Registrar hora de preparación
+            # Marcar como listo
             cursor.execute("""
                 INSERT OR REPLACE INTO pedidos_listos (pedido_id, hora_listo)
                 VALUES (?, ?)
@@ -71,21 +66,36 @@ def marcar_pedido_listo(pedido_id):
             # Obtener tiempo de preparación
             cursor.execute("SELECT fecha FROM pedidos WHERE id = ?", (pedido_id,))
             fila = cursor.fetchone()
-            tiempo_inicio = datetime.datetime.strptime(fila["fecha"], "%Y-%m-%d %H:%M:%S")
-            tiempo_final = datetime.datetime.strptime(ahora, "%Y-%m-%d %H:%M:%S")
-            delta = tiempo_final - tiempo_inicio
-            minutos = round(delta.total_seconds() / 60, 2)
+
+            if not fila:
+                logger.warning(f"[COCINA] ⚠️ Pedido {pedido_id} no encontrado al calcular tiempo")
+                return jsonify({"error": "Pedido no encontrado"}), 404
+
+            fecha_inicio = datetime.datetime.strptime(fila["fecha"], "%Y-%m-%d %H:%M:%S")
+            fecha_fin = datetime.datetime.strptime(ahora, "%Y-%m-%d %H:%M:%S")
+            tiempo_min = round((fecha_fin - fecha_inicio).total_seconds() / 60, 2)
+
+            # Guardar en métricas si la tabla existe
+            try:
+                cursor.execute("""
+                    INSERT INTO pedido_metricas (pedido_id, tiempo_preparacion)
+                    VALUES (?, ?)
+                    ON CONFLICT(pedido_id) DO UPDATE SET tiempo_preparacion = excluded.tiempo_preparacion
+                """, (pedido_id, int((fecha_fin - fecha_inicio).total_seconds())))
+                logger.info(f"[COCINA] 🕒 Tiempo preparación guardado para pedido {pedido_id}")
+            except Exception:
+                logger.warning(f"[COCINA] ⚠️ No se guardó métrica de tiempo (¿tabla no existe?)")
 
             conn.commit()
-            logging.info(f"[COCINA] ✅ Pedido {pedido_id} listo en {minutos} min")
+            logger.info(f"[COCINA] ✅ Pedido {pedido_id} marcado como listo")
 
             return jsonify({
                 "ok": True,
                 "pedido_id": pedido_id,
                 "hora_listo": ahora,
-                "tiempo_preparacion_min": minutos
+                "tiempo_preparacion_min": tiempo_min
             })
 
     except Exception as e:
-        logging.exception("[COCINA] ❌ Error al marcar pedido como listo")
+        logger.exception("[COCINA] ❌ Error al marcar pedido como listo")
         return jsonify({"error": "No se pudo actualizar el pedido"}), 500

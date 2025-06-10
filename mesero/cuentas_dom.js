@@ -26,12 +26,13 @@ export function renderizarListaCuentas(cuentas, onSeleccionar) {
     div.className = "bg-white p-4 rounded shadow mb-2 cursor-pointer hover:bg-gray-100";
     div.innerHTML = `
       <h3 class="font-bold">🪑 Mesa ${c.mesa}</h3>
-      <p class="text-sm text-gray-500">Cuenta: ${c.cuenta}</p>
-      <p class="text-sm text-gray-500">Mesero: ${c.mesero}</p>`;
+      <p class="text-sm text-gray-500">Total: $${c.total.toFixed(2)}</p>
+      <p class="text-sm text-gray-500">Propina: $${(c.propina || 0).toFixed(2)}</p>`;
     div.addEventListener("click", () => onSeleccionar(c.id));
     contenedor.appendChild(div);
   });
 }
+
 
 export function mostrarDetalleCuenta(datosCuenta) {
   const contenedor = document.getElementById("detalleCuenta");
