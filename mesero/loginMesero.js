@@ -95,3 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
     errorDisplay.setAttribute("aria-live", "assertive");
   }
 });
+
+
+//borrare esto
