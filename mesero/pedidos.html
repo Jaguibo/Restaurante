@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema de toma de pedidos para meseros">
+  <title>Toma de Pedidos - Mesero</title>
+  <script defer src="../shared/verificarSesion.js" data-rol="mesero"></script>
+  <script type="module" defer src="pedidos_eventos.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="icon" href="/ruta/a/tu/favicon.ico" />
+</head>
+<body class="bg-gray-100 p-4 min-h-screen">
+  <div class="max-w-3xl mx-auto">
+    <!-- 🧾 Encabezado -->
+    <header class="mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold mb-1">
+          🧾 Toma de Pedidos - <span id="meseroNombre" class="text-green-700">...</span>
+        </h1>
+        <p class="text-gray-600 text-sm">Sistema de gestión de pedidos</p>
+      </div>
+      <button id="cerrarSesionBtn"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+        🔓 Cerrar sesión
+      </button>
+    </header>
+
+    <!-- 📦 Formulario de pedidos -->
+    <main class="bg-white p-4 rounded-lg shadow-md mb-6">
+      <div class="mb-4">
+        <label for="mesa" class="font-medium block mb-1">Selecciona la mesa:</label>
+        <select id="mesa" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500">
+          <option value="" disabled selected>-- Cargando mesas... --</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label for="tipoCuenta" class="font-medium block mb-1">Tipo de cuenta:</label>
+        <select id="tipoCuenta" class="w-full p-2 border rounded focus:ring-2 focus:ring-green-500">
+          <option value="junta">Junta (todos pagan juntos)</option>
+          <option value="separada">Separada (cada uno paga lo suyo)</option>
+        </select>
+      </div>
+
+      <section aria-labelledby="pedido-heading" class="mb-6">
+        <h2 id="pedido-heading" class="sr-only">Formulario de pedidos</h2>
+        <div id="pedidoForm" class="space-y-4">
+          <p class="text-gray-500 text-center py-4">Seleccione una mesa para comenzar</p>
+        </div>
+      </section>
+
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button id="agregarPedido" type="button"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                disabled>
+          ➕ Agregar Pedido
+        </button>
+        <button id="enviarCocina" type="button"
+                class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-green-300"
+                disabled>
+          🍽️ Enviar a Cocina
+        </button>
+      </div>
+    </main>
+
+    <!-- ❌ Error general -->
+    <div id="error" role="alert"
+         class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6"
+         aria-live="assertive">
+    </div>
+
+    <!-- 📬 Pedidos listos -->
+    <section aria-labelledby="pedidos-listos-heading" class="bg-white p-4 rounded-lg shadow-md">
+      <h2 id="pedidos-listos-heading" class="text-xl font-bold mb-4 text-green-800">
+        📬 Pedidos Listos para Entregar
+      </h2>
+      <div id="listaListos" class="space-y-4">
+        <p class="text-gray-600 text-center py-4">Cargando pedidos listos...</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- 📎 Footer -->
+  <footer class="mt-8 text-center text-gray-500 text-sm">
+    <p>Sistema de Pedidos v1.0 © Junio 2025</p>
+  </footer>
+</body>
+</html>

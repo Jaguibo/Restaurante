@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Iniciar Sesión - Santobocado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-6 rounded shadow-xl w-full max-w-sm">
+    <h2 class="text-2xl font-bold text-center mb-4">🔐 Iniciar Sesión</h2>
+
+    <form id="loginForm">
+      <label for="usuario" class="sr-only">Usuario</label>
+      <div class="relative mb-3">
+        <input id="usuario" type="text" placeholder="Usuario" required autocomplete="username"
+               class="w-full p-2 pl-10 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <span class="absolute left-3 top-2.5 text-gray-500">👤</span>
+      </div>
+
+      <label for="password" class="sr-only">Contraseña</label>
+      <div class="relative mb-4">
+        <input id="password" type="password" placeholder="Contraseña" required autocomplete="current-password"
+               class="w-full p-2 pl-10 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <span class="absolute left-3 top-2.5 text-gray-500">🔒</span>
+      </div>
+
+      <button id="btnLogin" type="submit"
+              class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition duration-150">
+        Entrar
+      </button>
+
+      <p id="error" class="text-red-600 text-center mt-3 font-medium"></p>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const username = document.getElementById("usuario").value.trim(); // ✅ renombrado correctamente
+      const password = document.getElementById("password").value.trim();
+      const errorDisplay = document.getElementById("error");
+      const btnLogin = document.getElementById("btnLogin");
+
+      if (!username || !password) {
+        errorDisplay.textContent = "⚠️ Completa todos los campos.";
+        console.warn("[LOGIN] Campos vacíos detectados.");
+        return;
+      }
+
+      btnLogin.disabled = true;
+      btnLogin.innerHTML = "🔄 Verificando...";
+
+      try {
+        console.log(`[LOGIN] Intentando iniciar sesión como "${username}"...`);
+
+        const res = await fetch("http://localhost:5000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password }) // ✅ username correcto
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.rol) {
+          const timestamp = new Date().toLocaleString();
+          console.info(`✅ Inicio de sesión correcto para "${username}" [Rol: ${data.rol}] @ ${timestamp}`);
+
+          const rutas = {
+            admin: "/admin/admin.html",
+            mesero: "/mesero/pedidos.html",
+            cocinero: "/cocina/cocina.html"
+          };
+
+          const destino = rutas[data.rol];
+          if (destino) {
+            window.location.href = destino;
+          } else {
+            errorDisplay.textContent = "⚠️ Rol no reconocido por el sistema.";
+            console.warn("❌ Rol inválido recibido:", data.rol);
+          }
+
+        } else if (res.status === 401) {
+          errorDisplay.textContent = "❌ Usuario o contraseña incorrectos.";
+          console.warn("[LOGIN] Credenciales inválidas.");
+        } else {
+          errorDisplay.textContent = "⚠️ Error inesperado. Intenta más tarde.";
+          console.warn("[LOGIN] Respuesta inesperada del backend:", data);
+        }
+
+      } catch (err) {
+        console.error("❌ Error de red durante login:", err);
+        errorDisplay.textContent = "❌ No se pudo conectar al servidor.";
+      } finally {
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>

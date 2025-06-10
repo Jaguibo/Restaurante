@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin - Santobocado</title>
+
+  <!-- 🎨 TailwindCSS para estilos modernos y rápidos -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- 🔒 JavaScript con la lógica del login -->
+  <script defer src="login_autenticacion_admin.js"></script>
+  <script defer src="login_eventos.js"></script>
+  <script defer src="login_validacion.js"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-6 rounded shadow w-full max-w-sm text-center">
+    
+    <!-- 🔐 Título de la página -->
+    <h2 class="text-xl font-bold mb-4">🔐 Ingreso de Administrador</h2>
+
+    <!-- ✅ Formulario de inicio de sesión -->
+    <form id="loginForm">
+      
+      <!-- 🧑 Usuario -->
+      <input
+        id="username"
+        type="text"
+        placeholder="Usuario"
+        autocomplete="username"
+        required
+        class="w-full p-2 mb-3 border rounded"
+      />
+
+      <!-- 🔑 Contraseña -->
+      <input
+        id="password"
+        type="password"
+        placeholder="Contraseña"
+        autocomplete="current-password"
+        required
+        class="w-full p-2 mb-4 border rounded"
+      />
+
+      <!-- 🔘 Botón de login -->
+      <button
+        id="btnLogin"
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+      >
+        Ingresar
+      </button>
+
+      <!-- ⚠️ Mensaje de error si las credenciales fallan -->
+      <p id="error" class="text-red-600 mt-3 font-medium"></p>
+    </form>
+
+  </div>
+</body>
+</html>

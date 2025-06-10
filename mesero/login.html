@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inicio de Turno - Mesero</title>
+  <!-- ✅ Script de login del mesero -->
+  <script type="module" defer src="mesero_eventos.js"></script>
+  <!-- 🎨 Tailwind para estilos -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md text-center">
+    <h1 class="text-2xl font-bold mb-4">📋 Iniciar Turno - Mesero</h1>
+    <form id="formulario" autocomplete="on">
+      <label for="usuario" class="block text-left mb-1 font-medium">Usuario:</label>
+      <input id="usuario" name="username" type="text" placeholder="Ej. mesero1"
+             class="w-full mb-4 border p-2 rounded" required autocomplete="username" maxlength="50" />
+
+      <label for="password" class="block text-left mb-1 font-medium">Contraseña:</label>
+      <input id="password" name="password" type="password"
+             class="w-full mb-4 border p-2 rounded" required autocomplete="current-password" maxlength="50" />
+
+      <button id="btnLogin" type="submit"
+              class="bg-green-500 text-white font-semibold py-2 px-4 rounded hover:bg-green-600 w-full">
+        ✅ Iniciar Turno
+      </button>
+
+      <p id="error" class="text-red-600 mt-3 font-medium" aria-live="assertive"></p>
+    </form>
+  </div>
+</body>
+</html>
