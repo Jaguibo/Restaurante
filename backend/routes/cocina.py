@@ -6,7 +6,7 @@ import logging
 # 📌 Blueprint con prefijo /api/cocina
 cocina = Blueprint('cocina', __name__, url_prefix="/api/cocina")
 
-# 🧾 Logger local
+# 🧾 Logger local (hereda configuración global)
 logger = logging.getLogger(__name__)
 
 # 🔍 Obtener pedidos pendientes (no listos aún)
@@ -37,13 +37,14 @@ def pedidos_pendientes():
                     "items": items
                 })
 
+            logger.info(f"[COCINA] ✅ {len(resultado)} pedidos pendientes obtenidos")
             return jsonify({
                 "ok": True,
                 "nuevos": len(resultado),
                 "pedidos": resultado
             })
 
-    except Exception as e:
+    except Exception:
         logger.exception("[COCINA] ❌ Error obteniendo pedidos pendientes")
         return jsonify({"error": "Error interno"}), 500
 
@@ -55,6 +56,20 @@ def marcar_pedido_listo(pedido_id):
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
+            # Obtener fecha original del pedido
+            cursor.execute("SELECT fecha FROM pedidos WHERE id = ?", (pedido_id,))
+            fila = cursor.fetchone()
+
+            if not fila:
+                logger.warning(f"[COCINA] ⚠️ Pedido {pedido_id} no encontrado para marcar como listo")
+                return jsonify({"error": "Pedido no encontrado"}), 404
+
+            # Calcular duración
+            fecha_inicio = datetime.datetime.strptime(fila["fecha"], "%Y-%m-%d %H:%M:%S")
+            fecha_fin = datetime.datetime.strptime(ahora, "%Y-%m-%d %H:%M:%S")
+            duracion_segundos = int((fecha_fin - fecha_inicio).total_seconds())
+            duracion_min = round(duracion_segundos / 60, 2)
+
             # Marcar como listo
             cursor.execute("""
                 INSERT OR REPLACE INTO pedidos_listos (pedido_id, hora_listo)
@@ -63,28 +78,16 @@ def marcar_pedido_listo(pedido_id):
 
             cursor.execute("UPDATE pedidos SET estado = 'listo' WHERE id = ?", (pedido_id,))
 
-            # Obtener tiempo de preparación
-            cursor.execute("SELECT fecha FROM pedidos WHERE id = ?", (pedido_id,))
-            fila = cursor.fetchone()
-
-            if not fila:
-                logger.warning(f"[COCINA] ⚠️ Pedido {pedido_id} no encontrado al calcular tiempo")
-                return jsonify({"error": "Pedido no encontrado"}), 404
-
-            fecha_inicio = datetime.datetime.strptime(fila["fecha"], "%Y-%m-%d %H:%M:%S")
-            fecha_fin = datetime.datetime.strptime(ahora, "%Y-%m-%d %H:%M:%S")
-            tiempo_min = round((fecha_fin - fecha_inicio).total_seconds() / 60, 2)
-
-            # Guardar en métricas si la tabla existe
+            # Guardar en métricas si aplica
             try:
                 cursor.execute("""
                     INSERT INTO pedido_metricas (pedido_id, tiempo_preparacion)
                     VALUES (?, ?)
                     ON CONFLICT(pedido_id) DO UPDATE SET tiempo_preparacion = excluded.tiempo_preparacion
-                """, (pedido_id, int((fecha_fin - fecha_inicio).total_seconds())))
-                logger.info(f"[COCINA] 🕒 Tiempo preparación guardado para pedido {pedido_id}")
+                """, (pedido_id, duracion_segundos))
+                logger.info(f"[COCINA] 🕒 Tiempo preparación ({duracion_segundos}s) guardado para pedido {pedido_id}")
             except Exception:
-                logger.warning(f"[COCINA] ⚠️ No se guardó métrica de tiempo (¿tabla no existe?)")
+                logger.warning(f"[COCINA] ⚠️ No se guardó métrica (¿tabla inexistente?) para pedido {pedido_id}")
 
             conn.commit()
             logger.info(f"[COCINA] ✅ Pedido {pedido_id} marcado como listo")
@@ -93,9 +96,9 @@ def marcar_pedido_listo(pedido_id):
                 "ok": True,
                 "pedido_id": pedido_id,
                 "hora_listo": ahora,
-                "tiempo_preparacion_min": tiempo_min
+                "tiempo_preparacion_min": duracion_min
             })
 
-    except Exception as e:
+    except Exception:
         logger.exception("[COCINA] ❌ Error al marcar pedido como listo")
         return jsonify({"error": "No se pudo actualizar el pedido"}), 500

@@ -4,7 +4,6 @@ import logging
 import bcrypt
 
 auth = Blueprint("auth", __name__, url_prefix="/api")
-
 logger = logging.getLogger(__name__)
 
 # 🔐 Login de usuario
@@ -32,7 +31,9 @@ def login():
                 return jsonify({"error": "Credenciales inválidas"}), 401
 
             password_hash = usuario["password"]
-            if usuario["password"] != password:
+
+            # ⚠️ Validación HASH con bcrypt
+            if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
                 logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
                 return jsonify({"error": "Credenciales inválidas"}), 401
 

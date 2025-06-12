@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Promociones - Administrador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 🎨 Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+  <!-- 🔒 Seguridad y lógica -->
+  <script src="/shared/verificarSesion.js" data-rol="admin"></script>
+  <script type="module" defer src="promo_eventos.js"></script>
+  <script defer src="promo_form_campos.js"></script>
+
+  <style>
+    .toast-custom {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      padding: 12px 18px;
+      border-radius: 6px;
+      color: white;
+      display: none;
+    }
+    .toast-success { background-color: #198754; }
+    .toast-error { background-color: #dc3545; }
+  </style>
+</head>
+
+<body class="bg-light">
+  <div class="container py-5">
+    <h2 class="mb-4">🎉 Gestión Avanzada de Promociones</h2>
+
+    <!-- 📋 Formulario completo -->
+    <form id="promo-form" class="row g-3 mb-4" autocomplete="off">
+      <input type="hidden" id="promoId" />
+
+      <div class="col-md-4">
+        <input type="text" id="nombre" class="form-control" placeholder="Título de promoción" required autocomplete="off" />
+      </div>
+
+      <div class="col-md-4">
+        <input type="text" id="descripcion" class="form-control" placeholder="Descripción" required autocomplete="off" />
+      </div>
+
+      <div class="col-md-4">
+        <select id="tipo" class="form-select" required>
+          <option value="">-- Tipo de promoción --</option>
+          <option value="descuento">Descuento directo</option>
+          <option value="combo">Combo de productos</option>
+          <option value="productoGratis">Producto gratis</option>
+          <option value="producto">Descuento por producto</option>
+          <option value="categoria">Descuento por categoría</option>
+        </select>
+      </div>
+
+      <!-- Campos dinámicos controlados por promo_form_campos.js -->
+      <div class="col-md-6" id="grupo-productos" style="display:none">
+        <label>Productos afectados (Ctrl/Cmd + clic):</label>
+        <select id="productoIds" class="form-select" multiple>
+          <!-- opciones dinámicas -->
+        </select>
+      </div>
+
+      <div class="col-md-6" id="grupo-combo" style="display:none">
+        <label>Combo de productos (opcional):</label>
+        <select id="comboProductos" class="form-select" multiple>
+          <!-- opciones dinámicas -->
+        </select>
+      </div>
+
+      <div class="col-md-4" id="grupo-categoria" style="display:none">
+        <input type="text" id="categoria" class="form-control" placeholder="Categoría (opcional)" autocomplete="off" />
+      </div>
+
+      <div class="col-md-4" id="grupo-producto-gratis" style="display:none">
+        <select id="productoGratisId" class="form-select">
+          <option value="">Producto gratis (opcional)</option>
+          <!-- opciones dinámicas -->
+        </select>
+      </div>
+
+      <div class="col-md-4" id="grupo-porcentaje" style="display:none">
+        <input type="number" id="porcentajeDescuento" class="form-control" placeholder="Descuento (%)" min="1" max="100" />
+      </div>
+
+      <div class="col-md-4" id="grupo-minimo" style="display:none">
+        <input type="number" id="minimoMonto" class="form-control" placeholder="Monto mínimo $" step="0.01" min="0" />
+        <input type="number" id="minimoCantidad" class="form-control mt-2" placeholder="Cantidad mínima" min="0" />
+      </div>
+
+      <div class="col-md-4" id="grupo-horario" style="display:none">
+        <input type="text" id="horario" class="form-control" placeholder="Horario válido (ej. 12:00-16:00)" autocomplete="off" />
+      </div>
+
+      <div class="col-md-6" id="grupo-dias" style="display:none">
+        <label>Días válidos:</label>
+        <select id="diasValidos" class="form-select" multiple>
+          <option value="lunes">Lunes</option>
+          <option value="martes">Martes</option>
+          <option value="miércoles">Miércoles</option>
+          <option value="jueves">Jueves</option>
+          <option value="viernes">Viernes</option>
+          <option value="sábado">Sábado</option>
+          <option value="domingo">Domingo</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <input type="date" id="fecha_inicio" class="form-control" required />
+      </div>
+
+      <div class="col-md-3">
+        <input type="date" id="fecha_fin" class="form-control" required />
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-success">Guardar Promoción</button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary ms-2">Limpiar</button>
+      </div>
+    </form>
+
+    <!-- 🧾 Tabla de promociones -->
+    <table class="table table-striped table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Título</th>
+          <th>Descripción</th>
+          <th>Tipo</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="promo-list">
+        <!-- Promociones dinámicas -->
+      </tbody>
+    </table>
+
+    <a href="admin.html" class="btn btn-secondary mt-3">← Volver al Dashboard</a>
+  </div>
+
+  <!-- ✅ Toast personalizado -->
+  <div id="toast" class="toast-custom"></div>
+
+  <!-- 🧠 Función toast global -->
+  <script>
+    window.mostrarToast = function (mensaje, tipo = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = mensaje;
+      toast.className = `toast-custom toast-${tipo}`;
+      toast.style.display = "block";
+      setTimeout(() => toast.style.display = "none", 3000);
+    };
+
+    // Limpiar formulario y resetear grupos dinámicos
+    document.addEventListener("DOMContentLoaded", () => {
+      const btnLimpiar = document.getElementById("btnLimpiar");
+      const promoForm = document.getElementById("promo-form");
+      if (btnLimpiar && promoForm) {
+        btnLimpiar.addEventListener("click", () => {
+          promoForm.reset();
+          document.getElementById("promoId").value = "";
+          // Oculta todos los grupos dinámicos después de limpiar
+          [
+            "grupo-productos", "grupo-combo", "grupo-categoria", "grupo-producto-gratis",
+            "grupo-porcentaje", "grupo-minimo", "grupo-horario", "grupo-dias"
+          ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = "none";
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

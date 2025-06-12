@@ -1,3 +1,4 @@
+# backend/routes/ventas.py
 from flask import Blueprint, request, jsonify, session, Response
 from backend.db import get_db_connection
 import logging
@@ -5,21 +6,28 @@ import datetime
 
 ventas = Blueprint('ventas', __name__, url_prefix="/api")
 
-# 📝 Configura logging
+# 📅 Logging mejorado con consola + archivo
 logging.basicConfig(
-    filename='logs/app.log',
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler("backend/logs/app.log"),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger(__name__)
 
 # 🔒 Requiere rol admin o gerente
 def requiere_admin_o_gerente():
-    return session.get("rol") in ["admin", "gerente"]
+    rol = session.get("rol")
+    if rol not in ["admin", "gerente"]:
+        logger.warning(f"[ACCESO DENEGADO] Intento de acceso con rol: {rol}")
+        return False
+    return True
 
 # ------------------------------------------------------------------
-# 📦 Último pedido activo por mesa
+# 📦 Obtener pedido activo por mesa
 # ------------------------------------------------------------------
 @ventas.route("/pedido/<mesa>", methods=["GET"])
 def obtener_pedido(mesa):
@@ -32,12 +40,14 @@ def obtener_pedido(mesa):
             """, (mesa,)).fetchone()
 
             if not pedido:
+                logger.warning(f"[PEDIDO] No hay pedido activo para mesa {mesa}")
                 return jsonify({"ok": False, "error": "No hay pedidos activos"}), 404
 
             items = conn.execute("""
                 SELECT * FROM items WHERE pedido_id = ?
             """, (pedido["id"],)).fetchall()
 
+            logger.info(f"[PEDIDO] Pedido activo obtenido para mesa {mesa} | ID: {pedido['id']}")
             return jsonify({
                 "ok": True,
                 "id": pedido["id"],
@@ -49,7 +59,7 @@ def obtener_pedido(mesa):
                 "items": [dict(i) for i in items]
             })
 
-    except Exception:
+    except Exception as e:
         logger.exception("[VENTAS] ❌ Error al obtener pedido")
         return jsonify({"ok": False, "error": "Error interno"}), 500
 
@@ -59,16 +69,19 @@ def obtener_pedido(mesa):
 @ventas.route("/cerrar-cuenta", methods=["POST"])
 def cerrar_cuenta():
     if session.get("rol") != "mesero":
+        logger.warning("[CIERRE] Acceso denegado: solo mesero puede cerrar cuentas")
         return jsonify({"ok": False, "error": "No autorizado"}), 403
 
     data = request.get_json()
     campos = ["mesa", "pedido_id", "total", "mesero", "detalle"]
     if not all(c in data for c in campos):
+        logger.warning(f"[CIERRE] Faltan campos requeridos: {data}")
         return jsonify({"ok": False, "error": "Faltan datos"}), 400
 
     try:
         total = float(data["total"])
     except ValueError:
+        logger.warning(f"[CIERRE] Total inválido: {data['total']}")
         return jsonify({"ok": False, "error": "Total inválido"}), 400
 
     try:
@@ -81,6 +94,7 @@ def cerrar_cuenta():
             """, (data["pedido_id"],)).fetchone()
 
             if not pedido:
+                logger.warning(f"[CIERRE] Pedido inexistente o ya cerrado | ID: {data['pedido_id']}")
                 return jsonify({"ok": False, "error": "Pedido no existe o ya cerrado"}), 404
 
             propina_total = sum(float(d.get("propina", 0)) for d in data["detalle"])
@@ -94,7 +108,7 @@ def cerrar_cuenta():
             cursor.execute("UPDATE pedidos SET estado = 'cerrado' WHERE id = ?", (data["pedido_id"],))
             conn.commit()
 
-            logger.info(f"[CIERRE] ✅ Mesa {data['mesa']} cerrada | Total ${total:.2f} | Propina ${propina_total:.2f}")
+            logger.info(f"[CIERRE] ✅ Mesa {data['mesa']} cerrada | Total: ${total:.2f} | Propina: ${propina_total:.2f}")
             return jsonify({"ok": True, "fecha_cierre": fecha_cierre})
 
     except Exception:
@@ -148,6 +162,7 @@ def resumen_diario():
                 FROM pedidos WHERE estado != 'cerrado'
             """).fetchone()
 
+            logger.info("[RESUMEN] ✅ Resumen diario generado correctamente")
             return jsonify({
                 "ok": True,
                 "resumen": {
@@ -168,7 +183,6 @@ def resumen_diario():
     except Exception:
         logger.exception("[RESUMEN] ❌ Error en resumen diario")
         return jsonify({"ok": False, "error": "Error interno"}), 500
-
 # ------------------------------------------------------------------
 # 📅 Ventas por rango
 # ------------------------------------------------------------------
@@ -181,6 +195,7 @@ def ventas_por_rango():
     fin = request.args.get("fin")
 
     if not inicio or not fin:
+        logger.warning("[RANGO] Fechas no proporcionadas")
         return jsonify({"error": "Fechas requeridas"}), 400
 
     try:
@@ -188,16 +203,18 @@ def ventas_por_rango():
             conn.row_factory = lambda cur, row: {col[0]: row[idx] for idx, col in enumerate(cur.description)}
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT DATE(fecha_cierre) AS fecha, COUNT(*) AS ventas,
+                SELECT DATE(fecha_hora) AS fecha, COUNT(*) AS ventas,
                        SUM(total) AS monto, SUM(propina_total) AS propinas
                 FROM cierre_cuentas
-                WHERE DATE(fecha_cierre) BETWEEN ? AND ?
+                WHERE DATE(fecha_hora) BETWEEN ? AND ?
                 GROUP BY fecha ORDER BY fecha
             """, (inicio, fin))
+            logger.info(f"[RANGO] ✅ Ventas del rango {inicio} a {fin} consultadas correctamente")
             return jsonify({"ok": True, "ventas": cursor.fetchall()})
     except Exception:
         logger.exception("[RANGO] ❌ Error en ventas por rango")
         return jsonify({"ok": False, "error": "Error interno"}), 500
+
 
 # ------------------------------------------------------------------
 # 📤 Exportar CSV avanzado
@@ -212,6 +229,7 @@ def exportar_csv_avanzado():
     mesero = request.args.get("mesero")
 
     if not inicio or not fin:
+        logger.warning("[CSV-AVANZADO] Fechas faltantes")
         return jsonify({"error": "Fechas requeridas"}), 400
 
     try:
@@ -239,12 +257,13 @@ def exportar_csv_avanzado():
             headers = ["ID Venta", "ID Pedido", "Mesa", "Total", "Propina", "Mesero", "Fecha Hora"]
 
             def generar_csv():
-                yield '\ufeff'
+                yield '\ufeff'  # BOM para Excel
                 yield ",".join(headers) + "\n"
                 for row in rows:
                     yield ",".join(str(row.get(h.lower().replace(" ", "_"), "")) for h in headers) + "\n"
 
             filename = f"ventas_{inicio}_a_{fin}.csv"
+            logger.info(f"[CSV-AVANZADO] ✅ Exportación realizada para {filename}")
             return Response(
                 generar_csv(),
                 mimetype="text/csv",
@@ -252,8 +271,9 @@ def exportar_csv_avanzado():
             )
 
     except Exception:
-        logger.exception("[CSV] ❌ Error exportando CSV avanzado")
+        logger.exception("[CSV-AVANZADO] ❌ Error exportando CSV avanzado")
         return jsonify({"ok": False, "error": "Error interno"}), 500
+
 
 # ------------------------------------------------------------------
 # 📤 Exportar ventas del día (rápido)
@@ -287,11 +307,12 @@ def exportar_csv_hoy():
                     yield ",".join(str(row.get(h.lower().replace(" ", "_"), "")) for h in headers) + "\n"
 
             filename = f"ventas_{fecha_hoy}.csv"
+            logger.info(f"[CSV-HOY] ✅ Exportación realizada: {filename}")
             return Response(
                 generar_csv(),
                 mimetype="text/csv",
                 headers={"Content-Disposition": f"attachment; filename={filename}; charset=utf-8"}
             )
     except Exception:
-        logger.exception("[CSV] ❌ Error exportando CSV hoy")
+        logger.exception("[CSV-HOY] ❌ Error exportando CSV hoy")
         return jsonify({"ok": False, "error": "Error interno"}), 500

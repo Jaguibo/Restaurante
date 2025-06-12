@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editar Menú - Santobocado</title>
+
+  <!-- ✅ Verificación de sesión -->
+  <script src="/shared/verificarSesion.js" data-rol="admin"></script>
+
+  <!-- 📦 Funciones del menú (modular) -->
+  <script type="module" defer src="menu_eventos.js"></script>
+
+  <!-- 🎨 TailwindCSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #38a169;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      display: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+
+<body class="bg-white p-6">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- 🧾 Encabezado -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">🧾 Administrar Menú</h1>
+      <!-- Botón para abrir el modal del carrito -->
+      <button onclick="document.getElementById('modalCarrito').style.display='flex'"
+              class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
+        🛒 Ver Carrito
+      </button>
+    </div>
+
+    <!-- 🥘 Gestión de Productos -->
+    <div class="bg-white p-4 rounded shadow">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2">🍽️ Gestión de Productos</h2>
+      </div>
+
+      <!-- 🎛️ Filtros -->
+      <div class="flex flex-wrap gap-4 mb-4">
+        <select id="filtroCategoria" class="border p-2 rounded">
+          <option value="">Todas las categorías</option>
+          <!-- categorías dinámicas -->
+        </select>
+        <input type="text" id="buscador" placeholder="🔍 Buscar producto..."
+               class="p-2 border rounded flex-1 min-w-[180px]" />
+        <button id="exportarCSV"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          ⬇️ Exportar CSV
+        </button>
+      </div>
+
+      <!-- 📋 Formulario para crear/editar productos -->
+      <form id="formProducto" class="flex flex-wrap items-center gap-4" autocomplete="off">
+        <input type="hidden" id="prodId" />
+        <input type="text" id="prodNombre" placeholder="Nombre"
+               class="flex-1 min-w-[120px] p-2 border rounded"
+               required autocomplete="off" />
+        <input type="number" id="prodPrecio" step="0.01" min="0" placeholder="Precio"
+               class="flex-1 min-w-[100px] p-2 border rounded"
+               required autocomplete="off" />
+        <input type="text" id="prodCat" placeholder="Categoría"
+               class="flex-1 min-w-[120px] p-2 border rounded"
+               required autocomplete="off" />
+        <div class="flex gap-2">
+          <button type="submit"
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded transition">
+            Guardar
+          </button>
+          <button type="button" id="btnLimpiar"
+                  class="text-blue-500 underline text-sm self-center"
+                  title="Limpiar formulario">
+            Limpiar
+          </button>
+        </div>
+      </form>
+      <p id="msgProducto" class="text-sm text-green-600 mt-3"></p>
+    </div>
+
+    <!-- 📦 Tabla de productos -->
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full bg-gray-100 rounded shadow">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="text-left p-2">Producto</th>
+            <th class="text-left p-2">Precio</th>
+            <th class="text-left p-2">Categoría</th>
+            <th class="text-left p-2">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="productosLista">
+          <!-- productos dinámicos -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ✅ Toast -->
+  <div id="toast"></div>
+
+  <!-- 🔍 Modal del carrito -->
+  <div id="modalCarrito" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+    <div class="bg-white p-4 rounded shadow max-w-md w-full">
+      <h2 class="text-xl font-bold mb-4">🛒 Carrito de Compras</h2>
+      <div id="carritoContenedor">
+        <!-- Productos del carrito aparecerán aquí -->
+      </div>
+      <div class="text-right mt-4">
+        <button onclick="document.getElementById('modalCarrito').style.display='none'"
+                class="bg-gray-300 px-4 py-2 rounded">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧠 Función toast global y limpiar formulario -->
+  <script>
+    window.mostrarToast = function (mensaje, color = '#38a169') {
+      const t = document.getElementById("toast");
+      t.style.background = color;
+      t.textContent = mensaje;
+      t.style.display = "block";
+      setTimeout(() => (t.style.display = "none"), 3000);
+    };
+
+    // Añadir funcionalidad al botón Limpiar
+    document.addEventListener("DOMContentLoaded", () => {
+      const btnLimpiar = document.getElementById("btnLimpiar");
+      const formProducto = document.getElementById("formProducto");
+      if (btnLimpiar && formProducto) {
+        btnLimpiar.addEventListener("click", () => {
+          formProducto.reset();
+          formProducto.prodId.value = "";
+          document.getElementById("msgProducto").textContent = "";
+        });
+      }
+    });
+  </script>
+</body>
+</html>

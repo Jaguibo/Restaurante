@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cocina - Santobocado</title>
+
+  <!-- 🎨 TailwindCSS para estilos rápidos -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <!-- 🛡️ Verificación de sesión para rol cocina -->
+  <script src="/static/js/shared/verificarSesion.js" data-rol="cocinero"></script>
+
+  <!-- 🔄 Lógica dinámica de la cocina -->
+  <script type="module" defer src="/static/js/cocina/cocina_eventos.js"></script>
+</head>
+
+<body class="bg-yellow-50 p-4 min-h-screen">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- 👨‍🍳 Encabezado -->
+    <header class="mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold">👨‍🍳 Pedidos en Cocina</h1>
+        <p class="text-gray-600 text-sm">
+          Bienvenido, <span id="cocinaNombre" class="text-yellow-700">...</span>
+        </p>
+      </div>
+      <!-- 🔓 Cerrar sesión -->
+      <button id="cerrarSesionBtn"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+        🔓 Cerrar sesión
+      </button>
+    </header>
+
+    <!-- 📦 Pedidos activos -->
+    <section>
+      <h2 class="text-xl font-semibold mb-3">📥 Pedidos Activos</h2>
+      <div id="listaPedidos" class="space-y-4">
+        <p class="text-gray-500 text-center py-4">Cargando pedidos...</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 🔻 Footer -->
+  <footer class="mt-8 text-center text-gray-600 text-sm">
+    <p>Sistema de Pedidos - Santobocado &copy; Junio 2025</p>
+  </footer>
+
+  <!-- 👤 Mostrar nombre del usuario (opcional) -->
+  <script>
+    fetch("/api/usuario", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.nombre) {
+          document.getElementById("cocinaNombre").textContent = data.nombre;
+        }
+      })
+      .catch(() => console.warn("No se pudo cargar el nombre del usuario"));
+  </script>
+
+  <!-- 🔒 Logout -->
+  <script>
+    document.getElementById("cerrarSesionBtn").addEventListener("click", async () => {
+      try {
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+      } catch {}
+      window.location.href = "/login.html";
+    });
+  </script>
+</body>
+</html>
