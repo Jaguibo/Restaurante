@@ -1,31 +1,20 @@
-# Python version recomendada
-python_version == "3.10.*"
-
-# Flask y extensiones
+# Python version recomendada (Render usa 3.11 por defecto, pero puedes forzar 3.10 si lo necesitas)
 Flask==2.3.3
 Flask-Cors==4.0.0
+requests==2.31.0
+python-dotenv==1.0.1
 
-# PyTorch (solo CPU; instala con el índice oficial de PyTorch, ver abajo)
-torch==2.7.0
+# Si usas SQLAlchemy para la base de datos (opcional)
+SQLAlchemy==2.0.29
+Flask-Login==0.6.3
+Flask-Migrate==4.0.5
 
-# Data utils (ajusta según tus necesidades)
+# Dependencias comunes para ciencia de datos (opcional, elimina si no usas)
 numpy==1.25.2
 pandas==2.0.3
 
-# Otras dependencias comunes
-requests==2.31.0
+# Render instala gunicorn automáticamente para servidores WSGI, pero puedes fijar la versión si gustas
+gunicorn==21.2.0
 
-# Si usas dotenv para variables de entorno
-python-dotenv==1.0.1
-
-# Si usas SQLAlchemy
-SQLAlchemy==2.0.29
-
-# Si usas Flask-Login
-Flask-Login==0.6.3
-
-# Si usas Flask-Migrate para migraciones de base de datos
-Flask-Migrate==4.0.5
-
-# Si usas Jinja (ya viene con Flask, pero puedes fijar la versión)
+# Si usas Jinja explícitamente (aunque viene con Flask)
 Jinja2==3.1.3
