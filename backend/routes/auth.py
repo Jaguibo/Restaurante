@@ -2,12 +2,14 @@ from flask import Blueprint, request, session, jsonify
 from backend.db import get_db_connection
 import logging
 import bcrypt
+from backend.utils.error_logging import log_exceptions
 
 auth = Blueprint("auth", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 
 # 🔐 Login de usuario
 @auth.route("/login", methods=["POST"])
+@log_exceptions("login")
 def login():
     data = request.get_json()
     username = data.get("username", "").strip()
@@ -18,38 +20,34 @@ def login():
         logger.warning(f"[LOGIN] ❌ Campos vacíos | IP: {client_ip}")
         return jsonify({"error": "Todos los campos son obligatorios"}), 400
 
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT usuario, password, rol FROM usuarios WHERE usuario = ?
-            """, (username,))
-            usuario = cursor.fetchone()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT usuario, password, rol FROM usuarios WHERE usuario = ?
+        """, (username,))
+        usuario = cursor.fetchone()
 
-            if not usuario:
-                logger.warning(f"[LOGIN] ❌ Usuario no encontrado: {username} | IP: {client_ip}")
-                return jsonify({"error": "Credenciales inválidas"}), 401
+        if not usuario:
+            logger.warning(f"[LOGIN] ❌ Usuario no encontrado: {username} | IP: {client_ip}")
+            return jsonify({"error": "Credenciales inválidas"}), 401
 
-            password_hash = usuario["password"]
+        password_hash = usuario["password"]
 
-            # ⚠️ Validación HASH con bcrypt
-            if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
-                logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
-                return jsonify({"error": "Credenciales inválidas"}), 401
+        # ⚠️ Validación HASH con bcrypt
+        if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
+            logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
+            return jsonify({"error": "Credenciales inválidas"}), 401
 
-            # ✅ Autenticado correctamente
-            session["usuario"] = usuario["usuario"]
-            session["rol"] = usuario["rol"]
+        # ✅ Autenticado correctamente
+        session["usuario"] = usuario["usuario"]
+        session["rol"] = usuario["rol"]
 
-            logger.info(f"[LOGIN] ✅ Usuario autenticado: {username} | Rol: {usuario['rol']} | IP: {client_ip}")
-            return jsonify({"ok": True, "rol": usuario["rol"]}), 200
-
-    except Exception as e:
-        logger.exception(f"[LOGIN] ❌ Error al autenticar usuario: {e}")
-        return jsonify({"error": "Error interno"}), 500
+        logger.info(f"[LOGIN] ✅ Usuario autenticado: {username} | Rol: {usuario['rol']} | IP: {client_ip}")
+        return jsonify({"ok": True, "rol": usuario["rol"]}), 200
 
 # 🔍 Verificación de sesión activa
 @auth.route("/verificar", methods=["GET"])
+@log_exceptions("verificar_sesion")
 def verificar_sesion():
     if "usuario" in session and "rol" in session:
         return jsonify({
@@ -61,6 +59,7 @@ def verificar_sesion():
 
 # 🚪 Cierre de sesión
 @auth.route("/logout", methods=["POST"])
+@log_exceptions("logout")
 def logout():
     usuario = session.get("usuario", "desconocido")
     session.clear()
