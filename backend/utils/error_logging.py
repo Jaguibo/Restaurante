@@ -1,16 +1,17 @@
 import logging
 from functools import wraps
-from flask import jsonify, request
+from flask import jsonify
 
-def log_exceptions(endpoint_name=None):
-    def decorator(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
+logger = logging.getLogger()  # root logger, respeta configuración global
+
+def log_exceptions(endpoint_name):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
             try:
-                return f(*args, **kwargs)
+                return func(*args, **kwargs)
             except Exception as e:
-                ruta = endpoint_name or request.path
-                logging.exception(f"Error en endpoint {ruta}")
+                logger.error(f"[{endpoint_name}] ❌ Excepción: {e}", exc_info=True)
                 return jsonify({"error": "Error interno"}), 500
-        return wrapped
+        return wrapper
     return decorator

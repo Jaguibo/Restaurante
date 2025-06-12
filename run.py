@@ -3,11 +3,20 @@ import os
 from flask import send_from_directory, redirect
 from backend import create_app
 
-# Configurar logging global
+# === Asegurar carpeta de logs en la raíz ===
+LOG_DIR = "logs"
+LOG_FILE = os.path.join(LOG_DIR, "app.log")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# === Configurar logging global (archivo y consola) ===
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s - %(message)s',
-    datefmt='%H:%M:%S'
+    datefmt='%H:%M:%S',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8', mode='a'),
+        logging.StreamHandler()  # También imprime a consola
+    ]
 )
 logging.info("⚙️ Creando aplicación Flask...")
 
@@ -47,5 +56,5 @@ if __name__ == "__main__":
     try:
         app.run(debug=True, host="localhost", port=5000)
     except Exception as e:
-        logging.critical("❌ Error crítico al iniciar el servidor Flask: %s", e)
+        logging.critical("❌ Error crítico al iniciar el servidor Flask: %s", e, exc_info=True)
         exit(1)
