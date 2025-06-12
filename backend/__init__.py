@@ -3,7 +3,9 @@ import bcrypt
 from flask import Flask
 from flask_cors import CORS
 import os
-IS_RENDER = os.environ.get("RENDER", "false") == "true"
+
+IS_RENDER = os.environ.get("RENDER", "false").lower() == "true"
+IS_LOCAL = not IS_RENDER  # Para usar en condiciones
 
 # 🔁 Rutas (blueprints)
 from backend.routes.auth import auth
@@ -17,7 +19,6 @@ from backend.routes.productos import productos_bp
 
 from backend.db import get_db_connection, setup_database
 
-# ✅ Solo se obtiene el logger (NO se vuelve a configurar aquí)
 logger = logging.getLogger(__name__)
 
 # 👤 Crear usuario admin por defecto si no existe
@@ -45,15 +46,22 @@ def create_app():
         logger.info("🛠️ Iniciando aplicación Flask...")
 
         app = Flask(__name__)
-        app.secret_key = "supersecretkey"
+        app.secret_key = "supersecretkey"  # ⚠️ En producción usa una variable de entorno segura
 
-        # 🍪 Configuración de sesión segura
+        # 🍪 Configuración de sesión segura (adaptativa)
         app.config["SESSION_COOKIE_NAME"] = "santobocado_session"
-        app.config["SESSION_COOKIE_SAMESITE"] = "None"
         app.config["SESSION_COOKIE_HTTPONLY"] = True
-        app.config["SESSION_COOKIE_SECURE"] = IS_RENDER  # True si usás HTTPS
 
-        # 🌍 CORS con soporte para credenciales (cookies)
+        if IS_RENDER:
+            # Producción (Render): requiere cookies seguras
+            app.config["SESSION_COOKIE_SAMESITE"] = "None"
+            app.config["SESSION_COOKIE_SECURE"] = True
+        else:
+            # Localhost: no requiere HTTPS
+            app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+            app.config["SESSION_COOKIE_SECURE"] = False
+
+        # 🌍 CORS con soporte para cookies
         CORS(app, supports_credentials=True, origins=[
             "http://localhost:5500",
             "http://127.0.0.1:5500",

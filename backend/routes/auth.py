@@ -65,3 +65,12 @@ def logout():
     session.clear()
     logger.info(f"[LOGOUT] 🔒 Sesión cerrada por: {usuario}")
     return jsonify({"ok": True, "mensaje": "Sesión cerrada"}), 200
+
+# 🛠️ Ruta de depuración de sesión (temporal)
+@auth.route("/debug-session", methods=["GET"])
+def debug_session():
+    return jsonify({
+        "usuario": session.get("usuario"),
+        "rol": session.get("rol"),
+        "session_data": dict(session)
+    })
