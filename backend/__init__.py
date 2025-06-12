@@ -2,6 +2,8 @@ import logging
 import bcrypt
 from flask import Flask
 from flask_cors import CORS
+import os
+IS_RENDER = os.environ.get("RENDER", "false") == "true"
 
 # 🔁 Rutas (blueprints)
 from backend.routes.auth import auth
@@ -49,7 +51,7 @@ def create_app():
         app.config["SESSION_COOKIE_NAME"] = "santobocado_session"
         app.config["SESSION_COOKIE_SAMESITE"] = "None"
         app.config["SESSION_COOKIE_HTTPONLY"] = True
-        app.config["SESSION_COOKIE_SECURE"] = False  # True si usás HTTPS
+        app.config["SESSION_COOKIE_SECURE"] = IS_RENDER  # True si usás HTTPS
 
         # 🌍 CORS con soporte para credenciales (cookies)
         CORS(app, supports_credentials=True, origins=[
