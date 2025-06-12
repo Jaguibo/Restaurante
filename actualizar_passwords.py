@@ -7,7 +7,7 @@ cursor = conn.cursor()
 usuarios = [
     ("admin", "admin", "admin"),
     ("mesero1", "1234", "mesero"),
-    ("cocinero1", "1234", "cocinero")
+    ("cocina1", "1234", "cocinero")
 ]
 
 for usuario, password_plano, rol in usuarios:
