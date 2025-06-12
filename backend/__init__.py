@@ -12,17 +12,11 @@ from backend.routes.cuentas import cuentas
 from backend.routes.admin import admin
 from backend.routes.promociones import promociones_bp
 from backend.routes.productos import productos_bp
-  # ⚠️ Verifica si esta ruta debe venir de 'backend.routes' también
 
 from backend.db import get_db_connection, setup_database
 
-# 📝 Configuración de logs
+# ✅ Solo se obtiene el logger (NO se vuelve a configurar aquí)
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 
 # 👤 Crear usuario admin por defecto si no existe
 def insertar_admin_si_no_existe():
@@ -61,7 +55,7 @@ def create_app():
         CORS(app, supports_credentials=True, origins=[
             "http://localhost:5500",
             "http://127.0.0.1:5500",
-            "https://restaurante-mqgs.onrender.com"  # 🌐 Dominio público de Render
+            "https://restaurante-mqgs.onrender.com"
         ])
 
         # 🛠️ Inicializar base de datos y usuario admin

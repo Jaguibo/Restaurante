@@ -3,23 +3,19 @@ import os
 from flask import send_from_directory, redirect
 from backend import create_app
 
-# === Asegurar carpeta de logs en la raíz ===
-LOG_DIR = "logs"
-LOG_FILE = os.path.join(LOG_DIR, "app.log")
-os.makedirs(LOG_DIR, exist_ok=True)
+# === Configurar logging solo a consola ===
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
 
-# === Configurar logging global (archivo y consola) ===
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s - %(message)s',
     datefmt='%H:%M:%S',
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding='utf-8', mode='a'),
-        logging.StreamHandler()  # También imprime a consola
-    ]
+    handlers=[logging.StreamHandler()]  # Solo consola
 )
 logging.info("⚙️ Creando aplicación Flask...")
 
+# Crear app Flask
 app = create_app()
 app._static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend", "static"))
 app.template_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend", "templates"))
@@ -51,7 +47,6 @@ def serve_html(filename):
 app.config["PROPAGATE_EXCEPTIONS"] = True
 
 if __name__ == "__main__":
-    # Solo en local, debug y puerto 5000
     logging.info("🚀 Servidor Flask corriendo en modo debug en http://localhost:5000")
     try:
         app.run(debug=True, host="localhost", port=5000)
