@@ -60,7 +60,8 @@ def create_app():
         # 🌍 CORS con soporte para credenciales (cookies)
         CORS(app, supports_credentials=True, origins=[
             "http://localhost:5500",
-            "http://127.0.0.1:5500"
+            "http://127.0.0.1:5500",
+            "https://restaurante-mqgs.onrender.com"  # 🌐 Dominio público de Render
         ])
 
         # 🛠️ Inicializar base de datos y usuario admin

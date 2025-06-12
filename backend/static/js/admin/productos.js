@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const BASE_URL = "http://localhost:5000/api";
+  const BASE_URL = "/api";
   const formProducto = document.getElementById("formProducto");
   const productosLista = document.getElementById("productosLista");
   const msgProducto = document.getElementById("msgProducto");

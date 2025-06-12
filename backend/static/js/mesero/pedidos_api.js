@@ -1,6 +1,6 @@
 // pedidos_api.js
 
-const BASE_URL = "http://localhost:5000/api"; // ✅ Reutilizable
+const BASE_URL = "/api"; // ✅ Reutilizable
 
 // 🔐 Verificar sesión activa y rol de mesero
 export async function verificarSesionMesero() {
