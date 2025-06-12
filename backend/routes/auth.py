@@ -1,7 +1,7 @@
 from flask import Blueprint, request, session, jsonify
 from backend.db import get_db_connection
 import logging
-import bcrypt
+import hashlib
 from backend.utils.error_logging import log_exceptions
 
 auth = Blueprint("auth", __name__, url_prefix="/api")
@@ -32,9 +32,9 @@ def login():
             return jsonify({"error": "Credenciales inválidas"}), 401
 
         password_hash = usuario["password"]
+        hash_entrada = hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-        # ⚠️ Validación HASH con bcrypt
-        if not bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8")):
+        if hash_entrada != password_hash:
             logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
             return jsonify({"error": "Credenciales inválidas"}), 401
 
