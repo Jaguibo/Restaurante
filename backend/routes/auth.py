@@ -1,7 +1,7 @@
 from flask import Blueprint, request, session, jsonify
 from backend.db import get_db_connection
 import logging
-import hashlib
+import bcrypt  # 👈 Se usa bcrypt, no hashlib
 from backend.utils.error_logging import log_exceptions
 
 auth = Blueprint("auth", __name__, url_prefix="/api")
@@ -32,13 +32,9 @@ def login():
             return jsonify({"error": "Usuario no encontrado"}), 401
 
         password_hash_db = usuario["password"].strip()
-        hash_entrada = hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-        # DEBUG opcional (desactívalo en producción)
-        # print(f"Hash entrada: {hash_entrada}")
-        # print(f"Hash en BD:  {password_hash_db}")
-
-        if hash_entrada != password_hash_db:
+        # ✅ Verificar con bcrypt
+        if not bcrypt.checkpw(password.encode("utf-8"), password_hash_db.encode("utf-8")):
             logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
             return jsonify({"error": "Contraseña incorrecta"}), 401
 
