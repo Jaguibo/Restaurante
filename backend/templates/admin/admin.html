@@ -15,7 +15,9 @@
 
   <!-- 🎨 TailwindCSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
   <style>
+    /* 🌗 Contraste mejorado en modo oscuro */
     @media (prefers-color-scheme: dark) {
       body {
         background-color: #1a202c;
@@ -24,6 +26,30 @@
       .dark-mode .bg-white {
         background-color: #2d3748;
       }
+    }
+
+    /* ✅ Mejora de contraste en textos */
+    .bg-gray-800, .bg-gray-900, .bg-blue-900, .bg-gray-700,
+    .bg-dark, .bg-black {
+      color: #f9fafb !important;
+    }
+
+    .dark-bg, .dark-bg * {
+      color: #f9fafb !important;
+    }
+
+    input::placeholder, select::placeholder {
+      color: #a0aec0;
+    }
+
+    .text-gray-500, .text-gray-600 {
+      color: #d1d5db !important;
+    }
+
+    .info-msg {
+      color: #f9fafb;
+      font-weight: 500;
+      text-align: center;
     }
 
     #toast {
@@ -47,7 +73,7 @@
     <header class="mb-6 flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold mb-1">📈 Dashboard - Administrador</h1>
-        <p class="text-gray-600 text-sm">Bienvenido, <span id="adminNombre" class="text-blue-700">...</span></p>
+        <p class="text-gray-500 text-sm">Bienvenido, <span id="adminNombre" class="text-blue-400">...</span></p>
         <div class="mt-3 space-x-2">
           <a href="promociones.html"
              class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
@@ -75,20 +101,20 @@
     <!-- 🔢 Resumen -->
     <div id="resumen" class="tabSection">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white p-4 shadow rounded text-center">
-          <p class="text-gray-600">💵 Total Ventas</p>
+        <div class="bg-white p-4 shadow rounded text-center dark-bg">
+          <p class="text-gray-500">💵 Total Ventas</p>
           <p class="text-2xl font-bold" id="ventasTotales">$0.00</p>
         </div>
-        <div class="bg-white p-4 shadow rounded text-center">
-          <p class="text-gray-600">💰 Total Propinas</p>
+        <div class="bg-white p-4 shadow rounded text-center dark-bg">
+          <p class="text-gray-500">💰 Total Propinas</p>
           <p class="text-2xl font-bold" id="totalPropinas">$0.00</p>
         </div>
-        <div class="bg-white p-4 shadow rounded text-center">
-          <p class="text-gray-600">🪑 Mesas Atendidas</p>
+        <div class="bg-white p-4 shadow rounded text-center dark-bg">
+          <p class="text-gray-500">🪑 Mesas Atendidas</p>
           <p class="text-2xl font-bold" id="mesasTotales">0</p>
         </div>
-        <div class="bg-white p-4 shadow rounded text-center">
-          <p class="text-gray-600">📦 Pedidos Activos</p>
+        <div class="bg-white p-4 shadow rounded text-center dark-bg">
+          <p class="text-gray-500">📦 Pedidos Activos</p>
           <p class="text-2xl font-bold" id="activos">0</p>
         </div>
       </div>
@@ -99,7 +125,7 @@
       <h2 class="text-xl font-bold mb-3">📝 Ventas por Mesa</h2>
       <div class="overflow-x-auto">
         <table class="w-full bg-white rounded shadow">
-          <thead class="bg-gray-200">
+          <thead class="bg-gray-200 text-gray-800">
             <tr>
               <th class="text-left p-2">Mesa</th>
               <th class="text-left p-2">Total</th>
@@ -107,8 +133,9 @@
               <th class="text-left p-2">Fecha</th>
             </tr>
           </thead>
-          <tbody id="tablaVentas">
+          <tbody id="tablaVentas" class="bg-gray-800 dark-bg">
             <!-- contenido dinámico -->
+            <tr><td colspan="4" class="info-msg p-4">No hay ventas registradas hoy.</td></tr>
           </tbody>
         </table>
       </div>
@@ -120,7 +147,7 @@
         </a>
       </div>
 
-      <div class="mt-6 bg-white p-4 rounded shadow">
+      <div class="mt-6 bg-white p-4 rounded shadow dark-bg">
         <h2 class="text-xl font-bold mb-3">⬇️ Exportar Ventas por Rango</h2>
         <form action="/api/exportar-ventas-csv-avanzado" method="GET" target="_blank"
               class="space-y-3 md:flex md:items-end md:space-x-4">
@@ -153,8 +180,8 @@
         <input type="text" id="prodCat" placeholder="Categoría" class="p-2 border rounded" required>
         <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Guardar</button>
       </form>
-      <p id="msgProducto" class="text-sm text-green-600 mb-3"></p>
-      <div id="productosLista" class="space-y-2">
+      <p id="msgProducto" class="text-sm text-green-500 mb-3"></p>
+      <div id="productosLista" class="space-y-2 dark-bg">
         <!-- productos dinámicos -->
       </div>
     </div>
@@ -172,8 +199,8 @@
         </select>
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Agregar</button>
       </form>
-      <p id="msgUsuario" class="text-sm text-green-600 mb-3"></p>
-      <div id="usuariosLista" class="space-y-2">
+      <p id="msgUsuario" class="text-sm text-green-500 mb-3"></p>
+      <div id="usuariosLista" class="space-y-2 dark-bg">
         <!-- usuarios dinámicos -->
       </div>
     </div>
@@ -187,7 +214,7 @@
   <script>
     document.getElementById("cerrarSesionBtn").addEventListener("click", async () => {
       try {
-        const res = await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch("/api/logout", { method: "POST", credentials: "include" });
         window.location.href = "/login.html";
       } catch {
         mostrarToast("❌ Error al cerrar sesión");
@@ -206,12 +233,10 @@
       document.getElementById(id).classList.remove("hidden");
     }
 
-    // 🌗 Modo oscuro toggle
     document.getElementById("modoOscuroBtn").addEventListener("click", () => {
       document.body.classList.toggle("dark-mode");
     });
 
-    // Mostrar resumen por defecto
     mostrarSeccion('resumen');
   </script>
 </body>

@@ -5,25 +5,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cocina - Santobocado</title>
 
-  <!-- 🎨 TailwindCSS para estilos rápidos -->
+  <!-- 🎨 TailwindCSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
-  <!-- 🛡️ Verificación de sesión para rol cocina -->
+  <!-- 🛡️ Verificación de sesión -->
   <script src="/static/js/shared/verificarSesion.js" data-rol="cocinero"></script>
 
-  <!-- 🔄 Lógica dinámica de la cocina -->
+  <!-- 🔄 Funciones cocina -->
   <script type="module" defer src="/static/js/cocina/cocina_eventos.js"></script>
+
+  <!-- 🎨 Estilo accesible -->
+  <style>
+    body {
+      background-color: #fef9c3; /* amarillo pálido más suave */
+      color: #1a202c; /* gris oscuro */
+    }
+
+    h1, h2 {
+      color: #b45309; /* marrón/mostaza */
+    }
+
+    .card {
+      background-color: #fff8dc;
+      border: 1px solid #fcd34d;
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .text-muted {
+      color: #4b5563;
+    }
+
+    .highlight {
+      color: #d97706;
+      font-weight: 600;
+    }
+
+    footer {
+      color: #4b5563;
+    }
+
+    .pedido-vacio {
+      background-color: #fef3c7;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 500;
+      color: #92400e;
+    }
+  </style>
 </head>
 
-<body class="bg-yellow-50 p-4 min-h-screen">
+<body class="p-4 min-h-screen">
   <div class="max-w-4xl mx-auto">
 
     <!-- 👨‍🍳 Encabezado -->
     <header class="mb-6 flex justify-between items-center">
       <div>
         <h1 class="text-3xl font-bold">👨‍🍳 Pedidos en Cocina</h1>
-        <p class="text-gray-600 text-sm">
-          Bienvenido, <span id="cocinaNombre" class="text-yellow-700">...</span>
+        <p class="text-sm text-muted">
+          Bienvenido, <span id="cocinaNombre" class="highlight">...</span>
         </p>
       </div>
       <!-- 🔓 Cerrar sesión -->
@@ -37,18 +78,17 @@
     <section>
       <h2 class="text-xl font-semibold mb-3">📥 Pedidos Activos</h2>
       <div id="listaPedidos" class="space-y-4">
-        <p class="text-gray-500 text-center py-4">Cargando pedidos...</p>
+        <div class="pedido-vacio">Cargando pedidos...</div>
       </div>
     </section>
-
   </div>
 
   <!-- 🔻 Footer -->
-  <footer class="mt-8 text-center text-gray-600 text-sm">
+  <footer class="mt-8 text-center text-sm">
     <p>Sistema de Pedidos - Santobocado &copy; Junio 2025</p>
   </footer>
 
-  <!-- 👤 Mostrar nombre del usuario (opcional) -->
+  <!-- 👤 Mostrar nombre -->
   <script>
     fetch("/api/usuario", { credentials: "include" })
       .then(res => res.json())
