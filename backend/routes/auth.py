@@ -29,14 +29,18 @@ def login():
 
         if not usuario:
             logger.warning(f"[LOGIN] ❌ Usuario no encontrado: {username} | IP: {client_ip}")
-            return jsonify({"error": "Credenciales inválidas"}), 401
+            return jsonify({"error": "Usuario no encontrado"}), 401
 
-        password_hash = usuario["password"]
+        password_hash_db = usuario["password"].strip()
         hash_entrada = hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-        if hash_entrada != password_hash:
+        # DEBUG opcional (desactívalo en producción)
+        # print(f"Hash entrada: {hash_entrada}")
+        # print(f"Hash en BD:  {password_hash_db}")
+
+        if hash_entrada != password_hash_db:
             logger.warning(f"[LOGIN] ❌ Contraseña incorrecta para {username} | IP: {client_ip}")
-            return jsonify({"error": "Credenciales inválidas"}), 401
+            return jsonify({"error": "Contraseña incorrecta"}), 401
 
         # ✅ Autenticado correctamente
         session["usuario"] = usuario["usuario"]
