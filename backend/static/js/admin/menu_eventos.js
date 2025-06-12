@@ -1,4 +1,4 @@
-import { cargarMenu } from './menu_datos.js';
+import { cargarMenu } from './productos.js';
 import { mostrarProductos, mostrarMensajeError, mostrarNotificacion } from './menu_dom.js';
 import { actualizarContadorCarrito } from './menu_carrito.js';
 import { configurarBuscador } from './menu_busqueda.js';

@@ -4,7 +4,7 @@ export let productosMenu = [];
 const LOCAL_STORAGE_KEY = "productosMenuCache";
 
 // Asegúrate de declarar productosMenu si viene de otro módulo
-import { productosMenu } from "./menu_datos.js";
+import { productosMenu } from "./productos.js";
 
 export async function cargarMenu() {
   console.log("🍽️ [Menu] Iniciando carga del menú de productos...");

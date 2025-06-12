@@ -1,4 +1,4 @@
-import { productosMenu } from './menu_datos.js';
+import { productosMenu } from './productos';
 
 /**
  * Renderiza los productos en el contenedor HTML.

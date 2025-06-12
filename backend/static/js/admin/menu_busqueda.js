@@ -1,5 +1,5 @@
 // menu_busqueda.js
-import { productosMenu } from './menu_datos.js';
+import { productosMenu } from './productos.js';
 import { mostrarProductos } from './menu_dom.js';
 
 export function configurarBuscador() {

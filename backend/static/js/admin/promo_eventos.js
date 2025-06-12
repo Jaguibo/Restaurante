@@ -1,5 +1,7 @@
 import { obtenerPromociones, guardarPromocion } from './promo_api.js';
 import { renderizarPromociones } from './promo_dom.js';
+import { cargarYMostrarPromociones, guardarYRecargarPromocion } from './promo_controlador.js';
+
 
 export async function cargarYMostrarPromociones() {
   const promociones = await obtenerPromociones();

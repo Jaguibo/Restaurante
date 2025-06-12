@@ -1,5 +1,7 @@
 import { eliminarPromocion } from './promo_api.js';
 import { cargarYMostrarPromociones } from './promo_eventos.js';
+import { eliminarYRecargarPromocion } from './promo_controlador.js';
+
 
 /**
  * Renderiza una lista de promociones en una tabla HTML
