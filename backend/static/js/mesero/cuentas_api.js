@@ -1,5 +1,9 @@
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.location.hostname.includes("localhost")
+  ? "http://localhost:5000/api"
+  : "https://restaurante-mqgs.onrender.com/api";
+
 const USUARIO = sessionStorage.getItem("usuario") || "mesero1";
+
 
 /**
  * 📂 Obtiene las cuentas abiertas del mesero

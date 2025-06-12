@@ -3,11 +3,18 @@ export let productosMenu = [];
 // Clave de localStorage para persistencia offline
 const LOCAL_STORAGE_KEY = "productosMenuCache";
 
+// Asegúrate de declarar productosMenu si viene de otro módulo
+import { productosMenu } from "./menu_datos.js";
+
 export async function cargarMenu() {
   console.log("🍽️ [Menu] Iniciando carga del menú de productos...");
 
+  const BASE_URL = window.location.hostname.includes("localhost")
+    ? "http://localhost:5000"
+    : "https://restaurante-mqgs.onrender.com";
+
   try {
-    const res = await fetch("http://localhost:5000/api/productos", {
+    const res = await fetch(`${BASE_URL}/api/productos`, {
       method: "GET",
       credentials: "include"
     });
@@ -24,7 +31,8 @@ export async function cargarMenu() {
       return usarCacheOffline("Datos recibidos inválidos.");
     }
 
-    productosMenu = productos;
+    productosMenu.length = 0; // Limpiar el array si ya existía
+    productosMenu.push(...productos); // Copiar elementos
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(productos));
     console.log(`✅ [Menu] ${productos.length} producto(s) cargado(s) desde el servidor.`);
     return { productos };
@@ -33,6 +41,23 @@ export async function cargarMenu() {
     return usarCacheOffline("Error de conexión. Mostrando datos en caché.");
   }
 }
+
+function usarCacheOffline(mensaje) {
+  const cache = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (cache) {
+    const productos = JSON.parse(cache);
+    productosMenu.length = 0;
+    productosMenu.push(...productos);
+    console.warn(`📦 [Offline] Usando caché local (${productos.length} productos).`);
+    alert(`⚠️ ${mensaje}`);
+    return { productos };
+  } else {
+    console.error("📭 [Offline] No hay caché local disponible.");
+    alert("❌ No hay conexión y tampoco datos en caché.");
+    return { productos: [] };
+  }
+}
+
 
 // Función auxiliar para usar los datos almacenados localmente si hay un error
 function usarCacheOffline(mensaje) {

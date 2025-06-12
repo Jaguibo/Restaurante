@@ -2,6 +2,11 @@
   const currentScript = document.currentScript;
   const rolEsperado = currentScript?.dataset?.rol;
 
+  // 🔁 Detectar entorno
+  const API_BASE = window.location.hostname.includes("localhost")
+    ? "http://localhost:5000/api"
+    : "https://restaurante-mqgs.onrender.com/api";
+
   if (!rolEsperado) {
     console.warn("⚠️ No se especificó 'data-rol' en el script de verificación.");
     return;
@@ -10,7 +15,7 @@
   console.log(`[SESSION] Verificando sesión para rol requerido: "${rolEsperado}"`);
 
   try {
-    const res = await fetch("http://localhost:5000/api/verificar", {
+    const res = await fetch(`${API_BASE}/verificar`, {
       method: "GET",
       credentials: "include"
     });
@@ -67,7 +72,7 @@
 
     btn.onclick = async () => {
       try {
-        await fetch("http://localhost:5000/api/logout", {
+        await fetch(`${API_BASE}/logout`, {
           method: "POST",
           credentials: "include"
         });

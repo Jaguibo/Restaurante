@@ -39,7 +39,7 @@
     document.getElementById("loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const username = document.getElementById("usuario").value.trim(); // ✅ renombrado correctamente
+      const username = document.getElementById("usuario").value.trim();
       const password = document.getElementById("password").value.trim();
       const errorDisplay = document.getElementById("error");
       const btnLogin = document.getElementById("btnLogin");
@@ -53,14 +53,18 @@
       btnLogin.disabled = true;
       btnLogin.innerHTML = "🔄 Verificando...";
 
+      const API_BASE = window.location.hostname.includes("localhost")
+        ? "http://localhost:5000/api"
+        : "https://restaurante-mqgs.onrender.com/api";
+
       try {
         console.log(`[LOGIN] Intentando iniciar sesión como "${username}"...`);
 
-        const res = await fetch("http://localhost:5000/api/login", {
+        const res = await fetch(`${API_BASE}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ username, password }) // ✅ username correcto
+          body: JSON.stringify({ username, password })
         });
 
         const data = await res.json();

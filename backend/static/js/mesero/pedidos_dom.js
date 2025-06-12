@@ -218,9 +218,13 @@ export function renderizarPedidosListos(pedidos, onRecibir) {
 }
 
 // 🍽️ Menú visual por categorías
+const API_BASE = window.location.hostname.includes("localhost")
+  ? "http://localhost:5000/api"
+  : "https://restaurante-mqgs.onrender.com/api";
+
 export async function cargarMenuVisual() {
   try {
-    const res = await fetch("http://localhost:5000/api/productos-agrupados", { credentials: "include" });
+    const res = await fetch(`${API_BASE}/productos-agrupados`, { credentials: "include" });
     const data = await res.json();
 
     const contenedor = document.getElementById("menuVisual");
@@ -253,3 +257,4 @@ export async function cargarMenuVisual() {
     console.error("❌ Error al cargar menú visual:", err);
   }
 }
+
