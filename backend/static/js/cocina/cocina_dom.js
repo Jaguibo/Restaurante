@@ -169,7 +169,8 @@ function iniciarCronometro(spanId, fechaInicio) {
 function calcularTiempoPasado(fechaISO) {
   const inicio = new Date(fechaISO);
   const ahora = new Date();
-  const diff = ahora - inicio;
+  const diff = Math.max(0, ahora - inicio); // 🔥 Arreglo: evita negativos
+
   return {
     minutos: Math.floor(diff / 60000),
     segundos: Math.floor((diff % 60000) / 1000)

@@ -1,12 +1,28 @@
 import { obtenerPromociones, guardarPromocion } from './promo_api.js';
 import { renderizarPromociones } from './promo_dom.js';
-import { cargarYMostrarPromociones, guardarYRecargarPromocion } from './promo_controlador.js';
 
-
+/**
+ * Carga las promociones desde el servidor y las renderiza en la tabla
+ */
 export async function cargarYMostrarPromociones() {
   const promociones = await obtenerPromociones();
   const promoList = document.getElementById('promo-list');
   if (promoList) renderizarPromociones(promociones, promoList);
+}
+
+/**
+ * Elimina una promoción y recarga la lista
+ * @param {number|string} id
+ * @returns {Promise<void>}
+ */
+export async function eliminarYRecargarPromocion(id) {
+  const { eliminarPromocion } = await import('./promo_api.js'); // 👈 Lazy import (opcional)
+  const resultado = await eliminarPromocion(id);
+  if (resultado.ok) {
+    await cargarYMostrarPromociones();
+  } else {
+    alert(`❌ Error: ${resultado.error || 'No se pudo eliminar.'}`);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
 
     const tipo = document.getElementById('tipo').value;
-    const productoIds = obtenerSeleccionMultiple('productoIds'); // select[multiple]
+    const productoIds = obtenerSeleccionMultiple('productoIds');
     const comboProductos = obtenerSeleccionMultiple('comboProductos');
     const diasValidos = obtenerSeleccionMultiple('diasValidos');
     const productoGratisId = document.getElementById('productoGratisId')?.value || null;

@@ -6,17 +6,15 @@
   <meta name="description" content="Sistema de toma de pedidos para meseros">
   <title>Toma de Pedidos - Mesero</title>
 
-<!-- 🛡️ Verificación de sesión -->
-<script type="module" src="/static/js/shared/verificarSesion.js"></script>
+  <!-- 🛡️ Verificación de sesión -->
+  <script type="module" src="/static/js/shared/verificarSesion.js"></script>
 
-<!-- 📦 Lógica principal de pedidos -->
-<script type="module" src="/static/js/mesero/pedidos_eventos.js" defer></script>
+  <!-- 📦 Lógica principal de pedidos -->
+  <script type="module" src="/static/js/mesero/pedidos_eventos.js" defer></script>
 
-<!-- 💳 Cierre de cuenta lógica -->
-<script type="module" src="/static/js/mesero/cuentas_api.js"></script>
-<script type="module" src="/static/js/mesero/cierre_dom.js"></script>
-
-
+  <!-- 💳 Cierre de cuenta lógica -->
+  <script type="module" src="/static/js/mesero/cuentas_api.js"></script>
+  <script type="module" src="/static/js/mesero/cierre_dom.js"></script>
 
   <!-- 🎨 TailwindCSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -78,11 +76,16 @@
         </select>
       </div>
 
-      <!-- 📋 Menú -->
-      <section class="mt-8">
-        <h2 class="text-xl font-bold mb-4">📋 Menú por Categorías</h2>
-        <div id="menuVisual" class="space-y-6"></div>
-      </section>
+      <!-- 🏷️ Tipo de pedido -->
+      <div class="mb-4">
+        <label for="tipoPedido" class="block font-semibold mb-1">Tipo de pedido:</label>
+        <select id="tipoPedido" class="border rounded px-2 py-1 w-full" required>
+          <option value="">Selecciona tipo</option>
+          <option value="salon">Salón</option>
+          <option value="delivery">Delivery</option>
+          <option value="para llevar">Para llevar</option>
+        </select>
+      </div>
 
       <!-- 💳 Tipo de cuenta -->
       <div class="mb-4 mt-6">
@@ -92,6 +95,12 @@
           <option value="separada">Separada (cada uno paga lo suyo)</option>
         </select>
       </div>
+
+      <!-- 📋 Menú -->
+      <section class="mt-8">
+        <h2 class="text-xl font-bold mb-4">📋 Menú por Categorías</h2>
+        <div id="menuVisual" class="space-y-6"></div>
+      </section>
 
       <!-- 📝 Formulario de pedido -->
       <section aria-labelledby="pedido-heading" class="mb-4">

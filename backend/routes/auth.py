@@ -74,3 +74,14 @@ def debug_session():
         "rol": session.get("rol"),
         "session_data": dict(session)
     })
+
+# ✅ NUEVO: Ruta para obtener usuario autenticado (para el frontend)
+@auth.route("/usuario", methods=["GET"])
+def obtener_usuario():
+    nombre = session.get("usuario")
+    rol = session.get("rol")
+    
+    if not nombre:
+        return jsonify({"error": "No autenticado"}), 401
+
+    return jsonify({"nombre": nombre, "rol": rol}), 200

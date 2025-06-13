@@ -1,7 +1,4 @@
 import { eliminarPromocion } from './promo_api.js';
-import { cargarYMostrarPromociones } from './promo_eventos.js';
-import { eliminarYRecargarPromocion } from './promo_controlador.js';
-
 
 /**
  * Renderiza una lista de promociones en una tabla HTML
@@ -36,14 +33,14 @@ export function renderizarPromociones(lista, contenedor) {
     contenedor.appendChild(row);
   });
 
-  // Asignar eventos a botones
+  // Asignar eventos a botones de eliminar
   contenedor.querySelectorAll('button[data-id]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       if (confirm('¿Eliminar esta promoción?')) {
         const resultado = await eliminarPromocion(id);
         if (resultado.ok) {
-          cargarYMostrarPromociones();
+          location.reload(); // O puedes llamar cargarYMostrarPromociones() si tienes acceso aquí
         } else {
           alert(`❌ Error: ${resultado.error || 'No se pudo eliminar.'}`);
         }
@@ -51,11 +48,10 @@ export function renderizarPromociones(lista, contenedor) {
     });
   });
 
-  // Edición (futuro)
+  // Asignar eventos a botones de edición (placeholder)
   contenedor.querySelectorAll('button[data-editar-id]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-editar-id');
-      // Aquí podrías cargar el formulario con los datos existentes
       alert(`Editar promoción ID: ${id} (función aún no implementada)`);
     });
   });

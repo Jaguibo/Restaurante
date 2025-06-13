@@ -22,7 +22,6 @@ import {
 // De cierre_dom.js
 import { mostrarFormularioCierre } from './cierre_dom.js';
 
-
 let mesero = "";
 let listaPedidosSeparados = [];
 
@@ -46,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const tipoCuentaSelect = document.getElementById("tipoCuenta");
   const mesaSelect = document.getElementById("mesa");
+  const tipoPedidoSelect = document.getElementById("tipoPedido"); // 👈 Nuevo select
   const enviarBtn = document.getElementById("enviarCocina");
   const siguienteBtn = document.getElementById("siguienteCliente");
   const botonesSeparados = document.getElementById("botonesSeparados");
@@ -73,9 +73,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   enviarBtn.addEventListener("click", async () => {
     const mesa = mesaSelect.value;
     const cuenta = tipoCuentaSelect.value;
+    const tipo = tipoPedidoSelect.value; // 👈 Captura el tipo de pedido
 
     if (!mesa) {
       mostrarError("⚠️ Debes seleccionar una mesa.");
+      return;
+    }
+    if (!tipo) {
+      mostrarError("⚠️ Debes seleccionar un tipo de pedido.");
       return;
     }
 
@@ -110,9 +115,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       cuenta,
       items,
       mesero,
+      tipo, // 👈 Incluye tipo de pedido
       fecha: new Date().toISOString()
     };
 
+    enviarBtn.disabled = true; // ✅ Mejora 2: desactiva botón para evitar duplicados
     try {
       await enviarPedido(payload);
       mostrarExito("✅ Pedido enviado correctamente.");
@@ -120,6 +127,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       listaPedidosSeparados = [];
     } catch {
       mostrarError("❌ Error al enviar el pedido.");
+    } finally {
+      enviarBtn.disabled = false; // vuelve a activar el botón
     }
   });
 
@@ -133,12 +142,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // ✅ Mejora 1: Validar que pedido esté definido antes de mostrar formulario de cierre
   async function marcarComoRecibido(id, pedido) {
     const ok = await marcarPedidoRecibido(id);
     if (ok) {
       mostrarExito("✅ Pedido marcado como recibido.");
       cargarPedidosListos();
-      mostrarFormularioCierre(pedido); // 👈 Muestra formulario de cierre directamente
+
+      if (pedido) {
+        mostrarFormularioCierre(pedido); // solo si viene correctamente
+      } else {
+        console.warn("⚠️ No se pasó el objeto pedido a mostrarFormularioCierre");
+      }
     } else {
       mostrarError("❌ No se pudo marcar como recibido.");
     }

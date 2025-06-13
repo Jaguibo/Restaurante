@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
   cuenta TEXT NOT NULL CHECK(cuenta IN ('junta', 'separada')),
   mesero TEXT NOT NULL,
   fecha TEXT NOT NULL,
-  estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'listo', 'recibido', 'cerrado'))
+  estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'listo', 'recibido', 'cerrado')),
+  tipo TEXT DEFAULT 'salon' -- 👈 Campo para tipo de pedido
 );
 
 -- 📋 Ítems de pedido

@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 import logging
 from backend.db import get_db_connection
+fecha = datetime.utcnow().isoformat()
 
 cuentas = Blueprint("cuentas", __name__, url_prefix="/api/cuentas")
 

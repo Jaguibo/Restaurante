@@ -214,7 +214,8 @@ export function renderizarPedidosListos(pedidos, onRecibir) {
       <button class="mt-2 bg-blue-600 text-white px-3 py-1 rounded">📥 Recibido</button>
     `;
 
-    div.querySelector("button").addEventListener("click", () => onRecibir(p.id));
+    // <<<<<<<<<<<<<<< CAMBIO AQUI: PASA p.id Y p AL CALLBACK
+    div.querySelector("button").addEventListener("click", () => onRecibir(p.id, p));
     listaListos.appendChild(div);
   });
 }
@@ -259,4 +260,3 @@ export async function cargarMenuVisual() {
     console.error("❌ Error al cargar menú visual:", err);
   }
 }
-
