@@ -36,10 +36,12 @@ export function mostrarMensaje(texto) {
 export function renderizarMesas(mesas) {
   const mesaSelect = document.getElementById("mesa");
   mesaSelect.innerHTML = '<option value="">Selecciona una mesa</option>';
+
   mesas.forEach(m => {
+    const numero = typeof m === "object" ? m.numero : m; // manejar ambos casos
     const opt = document.createElement("option");
-    opt.value = m.numero || m;
-    opt.textContent = `Mesa ${m.numero || m}`;
+    opt.value = numero;
+    opt.textContent = `Mesa ${numero}`;
     mesaSelect.appendChild(opt);
   });
 }

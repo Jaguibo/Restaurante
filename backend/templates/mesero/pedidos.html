@@ -6,9 +6,16 @@
   <meta name="description" content="Sistema de toma de pedidos para meseros">
   <title>Toma de Pedidos - Mesero</title>
 
-  <!-- 🛡️ Verificación de sesión -->
-  <script src="/shared/verificarSesion.js" data-rol="mesero"></script>
-  <script type="module" src="/static/js/mesero/pedidos_eventos.js" defer></script>
+<!-- 🛡️ Verificación de sesión -->
+<script type="module" src="/static/js/shared/verificarSesion.js"></script>
+
+<!-- 📦 Lógica principal de pedidos -->
+<script type="module" src="/static/js/mesero/pedidos_eventos.js" defer></script>
+
+<!-- 💳 Cierre de cuenta lógica -->
+<script type="module" src="/static/js/mesero/cierre_api.js"></script>
+<script type="module" src="/static/js/mesero/cierre_dom.js"></script>
+
 
 
   <!-- 🎨 TailwindCSS -->
