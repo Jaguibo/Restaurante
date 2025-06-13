@@ -1,4 +1,4 @@
-import { cerrarCuenta } from './cierre_api.js';
+import { cerrarCuenta } from './cuentas_api.js';
 
 
 /**

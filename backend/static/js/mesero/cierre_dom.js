@@ -1,4 +1,4 @@
-import { cerrarCuenta } from "./cierre_api.js";
+import { cerrarCuenta } from "./cuentas_api.js";
 import { mostrarExito, mostrarError } from "./pedidos_dom.js";
 import { generarTicket } from "./ticket_dom.js"; // para imprimir ticket (opcional)
 
