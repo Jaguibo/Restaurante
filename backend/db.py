@@ -1,13 +1,17 @@
-import sqlite3
 import os
+import sqlite3
 import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def get_db_connection():
+    # Usa la ruta absoluta al nivel del proyecto, no solo el script actual
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    db_path = os.path.join(base_dir, "pedidos.db")
+    logger.info(f"📍 Usando base de datos en: {db_path}")
     try:
-        conn = sqlite3.connect("pedidos.db")
+        conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         return conn
     except sqlite3.Error as e:
