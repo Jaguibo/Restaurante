@@ -1,4 +1,5 @@
-import { cerrarCuenta } from './mesero_api.js';
+import { cerrarCuenta } from './cierre_api.js';
+
 
 /**
  * 💳 Abre el modal de cierre de cuenta
