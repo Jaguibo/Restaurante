@@ -1,21 +1,16 @@
-import {
-  obtenerPedidosPendientes
-} from './cocina_api.js';
-
-import {
-  mostrarPedidos,
-  mostrarMensaje
-} from './cocina_dom.js';
+import { obtenerPedidosPendientes } from './cocina_api.js';
+import { mostrarPedidos, mostrarMensaje } from './cocina_dom.js';
 
 let cargando = false;
 let intervaloAuto = null;
+let autoActualizar = true; // 🆕 Puedes usarlo con un botón "Pausar actualizaciones"
 
 /**
  * 🔄 Carga los pedidos y los muestra, con reintentos si falla
  * @param {number} reintento - Reintento actual (interno)
  */
 export async function cargarYMostrarPedidos(reintento = 0) {
-  if (cargando) return; // Evita llamadas múltiples simultáneas
+  if (cargando || !autoActualizar) return; // Evita llamadas múltiples simultáneas o si está en pausa
   cargando = true;
 
   if (reintento === 0) {
@@ -50,9 +45,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // Carga inicial
   cargarYMostrarPedidos();
 
-  // Carga automática cada minuto
+  // 🔁 Carga automática cada minuto
   intervaloAuto = setInterval(() => {
     console.log("⏰ Actualización automática de pedidos");
     cargarYMostrarPedidos();
   }, 60000);
+
+  // 🛑 Limpia el intervalo al salir
+  window.addEventListener("beforeunload", () => {
+    clearInterval(intervaloAuto);
+  });
+
+  // ✅ Acción múltiple: marcar seleccionados como listos
+  const btnMulti = document.getElementById("btnMultiplesListos");
+  if (btnMulti) {
+    btnMulti.addEventListener("click", async () => {
+      const seleccionados = [...document.querySelectorAll(".check-pedido:checked")];
+      if (seleccionados.length === 0) {
+        alert("⚠️ Selecciona al menos un pedido.");
+        return;
+      }
+
+      const ids = seleccionados.map(c => c.dataset.id);
+      const confirmacion = confirm(`¿Marcar ${ids.length} pedidos como listos?`);
+      if (!confirmacion) return;
+
+      const { marcarMultiplesPedidosListos } = await import('./cocina_api.js');
+      const exitosos = await marcarMultiplesPedidosListos(ids);
+      alert(`✅ ${exitosos} pedidos marcados como listos.`);
+      cargarYMostrarPedidos();
+    });
+  }
 });

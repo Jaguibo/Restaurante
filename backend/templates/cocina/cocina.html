@@ -17,12 +17,12 @@
   <!-- 🎨 Estilo accesible -->
   <style>
     body {
-      background-color: #fef9c3; /* amarillo pálido más suave */
-      color: #1a202c; /* gris oscuro */
+      background-color: #fef9c3;
+      color: #1a202c;
     }
 
     h1, h2 {
-      color: #b45309; /* marrón/mostaza */
+      color: #b45309;
     }
 
     .card {
@@ -74,9 +74,16 @@
       </button>
     </header>
 
-    <!-- 📦 Pedidos activos -->
+    <!-- 📥 Pedidos Activos -->
     <section>
       <h2 class="text-xl font-semibold mb-3">📥 Pedidos Activos</h2>
+      
+      <!-- ✅ Marcar múltiples como listos -->
+      <button id="btnMultiplesListos"
+              class="mb-4 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800">
+        ✅ Marcar seleccionados como listos
+      </button>
+
       <div id="listaPedidos" class="space-y-4">
         <div class="pedido-vacio">Cargando pedidos...</div>
       </div>
@@ -88,7 +95,7 @@
     <p>Sistema de Pedidos - Santobocado &copy; Junio 2025</p>
   </footer>
 
-  <!-- 👤 Mostrar nombre -->
+  <!-- 👤 Mostrar nombre del usuario -->
   <script>
     fetch("/api/usuario", { credentials: "include" })
       .then(res => res.json())

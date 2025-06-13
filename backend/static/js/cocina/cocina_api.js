@@ -1,4 +1,4 @@
-const BASE_URL = "/api"; // 👈 Mejor usar ruta relativa para compatibilidad producción/dev
+const BASE_URL = "/api"; // ✅ Ruta relativa para compatibilidad en producción/dev
 
 /**
  * 📦 Obtiene los pedidos pendientes desde el backend.
@@ -31,7 +31,7 @@ export async function obtenerPedidosPendientes() {
 }
 
 /**
- * ✅ Marca un pedido como 'listo' (o estado específico)
+ * ✅ Marca un pedido como 'listo' (o cualquier estado)
  * @param {number|string} id ID del pedido
  * @param {string} estado Estado a aplicar (por defecto: 'listo')
  * @returns {Promise<boolean>}
@@ -57,15 +57,18 @@ export async function marcarPedidoComo(id, estado = "listo") {
 }
 
 /**
- * ⏳ Marca varios pedidos como listos (batch)
+ * ⏳ Marca múltiples pedidos como listos (en paralelo)
  * @param {Array<number|string>} ids Lista de IDs
- * @returns {Promise<number>} Cantidad exitosa
+ * @returns {Promise<number>} Cantidad de pedidos exitosamente actualizados
  */
 export async function marcarMultiplesPedidosListos(ids = []) {
-  let exitosos = 0;
-  for (const id of ids) {
-    const ok = await marcarPedidoComo(id, "listo");
-    if (ok) exitosos++;
+  try {
+    const resultados = await Promise.all(
+      ids.map(id => marcarPedidoComo(id, "listo"))
+    );
+    return resultados.filter(ok => ok).length;
+  } catch (error) {
+    console.error("❌ [CocinaAPI] Error en batch de pedidos listos:", error);
+    return 0;
   }
-  return exitosos;
 }

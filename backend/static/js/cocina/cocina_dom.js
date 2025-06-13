@@ -2,7 +2,7 @@ import { marcarPedidoComo } from './cocina_api.js';
 import { cargarYMostrarPedidos } from './cocina_eventos.js';
 
 let pedidosAnteriores = [];
-const sonidoAlerta = new Audio("alerta.mp3");
+const sonidoAlerta = new Audio("/static/assets/alerta.mp3"); // 🛠 Ruta corregida
 
 /**
  * 🧾 Muestra los pedidos pendientes en pantalla
@@ -96,7 +96,7 @@ function agruparPorTipo(pedidos) {
  */
 function renderizarPedido(pedido) {
   const div = document.createElement("div");
-  const fondo = "bg-white"; // Color general, el cronómetro cambia por sí solo
+  const fondo = "bg-white";
   const tiempoId = `tiempo-${pedido.id}`;
 
   let items = [];
@@ -104,12 +104,15 @@ function renderizarPedido(pedido) {
     items = Array.isArray(pedido.items) ? pedido.items : JSON.parse(pedido.items);
   } catch (e) {
     console.error(`❌ Error interpretando items del pedido ${pedido.id}:`, e);
+    div.innerHTML = `<p class="text-red-600">❌ Error al cargar productos</p>`;
+    return div;
   }
 
   div.className = `${fondo} p-4 rounded shadow border mb-4`;
 
   div.innerHTML = `
-    <h3 class="text-xl font-bold mb-2">🪑 Mesa: ${pedido.mesa}</h3>
+    <input type="checkbox" class="check-pedido mr-2" data-id="${pedido.id}" />
+    <h3 class="text-xl font-bold mb-2 inline">🪑 Mesa: ${pedido.mesa}</h3>
     <p class="mb-2 text-gray-700">
       ⏱️ Tiempo: <strong id="${tiempoId}">cargando...</strong>
     </p>
@@ -153,8 +156,9 @@ function iniciarCronometro(spanId, fechaInicio) {
       minutos >= 10 ? "text-yellow-600" : "text-green-600";
   }
 
-  actualizar(); // Inicial
-  setInterval(actualizar, 1000); // Cada segundo
+  actualizar();
+  // TODO: considerar guardar y limpiar interval si se vuelve dinámico
+  setInterval(actualizar, 1000);
 }
 
 /**
@@ -179,11 +183,15 @@ function asignarEventosBotones() {
   document.querySelectorAll(".btn-accion").forEach(btn => {
     btn.addEventListener("click", async () => {
       const id = parseInt(btn.dataset.id);
+      if (isNaN(id)) return alert("❌ ID de pedido no válido.");
       const accion = btn.dataset.accion;
       const confirmar = confirm(`¿Marcar el pedido ${id} como "${accion}"?`);
       if (!confirmar) return;
 
+      btn.disabled = true;
       const exito = await marcarPedidoComo(id, accion);
+      btn.disabled = false;
+
       if (exito) {
         cargarYMostrarPedidos();
       } else {

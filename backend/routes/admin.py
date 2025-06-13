@@ -114,6 +114,8 @@ def listar_usuarios():
         logger.exception("[ADMIN] ❌ Error al listar usuarios")
         return jsonify({"error": "Error interno"}), 500
 
+import sqlite3
+
 @admin.route("/usuarios", methods=["POST"])
 def agregar_usuario():
     if not es_admin():
@@ -138,9 +140,15 @@ def agregar_usuario():
             conn.commit()
         logger.info(f"[ADMIN] ✅ Usuario creado: {usuario} | Rol: {rol}")
         return jsonify({"ok": True, "mensaje": "Usuario creado"})
+
+    except sqlite3.IntegrityError as e:
+        logger.warning(f"[ADMIN] ⚠️ Usuario duplicado: {usuario}")
+        return jsonify({"ok": False, "error": f"El usuario '{usuario}' ya existe."}), 409
+
     except Exception as e:
-        logger.exception("[ADMIN] ❌ Error al crear usuario")
-        return jsonify({"ok": False, "error": "Error al crear usuario"}), 500
+        logger.exception(f"[ADMIN] ❌ Error general al crear usuario: {str(e)}")
+        return jsonify({"ok": False, "error": "Error interno del servidor"}), 500
+
 
 @admin.route("/usuarios/<usuario>", methods=["DELETE"])
 def eliminar_usuario(usuario):
